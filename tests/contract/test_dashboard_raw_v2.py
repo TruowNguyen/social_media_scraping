@@ -34,6 +34,25 @@ def ingest(raw):
 
 
 class DashboardRawTests(unittest.TestCase):
+    def test_resume_keeps_job_identity_across_more_than_cache_limit_retries(self):
+        with tempfile.TemporaryDirectory() as folder:
+            service=SearchService(Path(folder)/'raw.db',CONFIG)
+            identifier='a'*32
+            report=dict(crawl_run_id='dashboard_'+identifier,source_ids=[SOURCE],
+                        status='PARTIAL',jobs=[],unresolved_time=0)
+            window=Window(parse_utc('2026-10-09T00:00:00Z'),parse_utc('2026-10-10T00:00:00Z'))
+            try:
+                with patch('engine.dashboard_conversations.crawl',return_value=report),patch('engine.dashboard_conversations.results',return_value=[]):
+                    for _ in range(25):
+                        job=service.start({},'CRAWL',window_override=window,resume_report=report)
+                        self.assertEqual(job['job_id'],identifier)
+                        deadline=time.monotonic()+3
+                        while service.running and time.monotonic()<deadline:time.sleep(.01)
+                        self.assertFalse(service.running)
+                    self.assertEqual(len(service.jobs),1)
+                    self.assertEqual(service.get(identifier)['crawl_run_id'],report['crawl_run_id'])
+            finally:service.close()
+
     def test_pending_run_reader_does_not_request_writer_lock(self):
         with tempfile.TemporaryDirectory() as folder:
             db=Path(folder)/'raw.db';raw=ConversationStore(db)

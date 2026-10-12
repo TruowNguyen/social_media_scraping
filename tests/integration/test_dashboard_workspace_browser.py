@@ -15,6 +15,58 @@ ROOT=Path(__file__).resolve().parents[2]
 
 @unittest.skipUnless(os.environ.get('ACQUISITION_BROWSER_TESTS')=='1','Opt-in Chromium')
 class WorkspaceBrowserTests(unittest.TestCase):
+    def test_missing_job_stops_polling_reconnects_and_preserves_saved_view(self):
+        from playwright.sync_api import sync_playwright,expect
+        prepare_browser_path()
+        with tempfile.TemporaryDirectory() as folder:
+            db=Path(folder)/'db.sqlite3';fixture(db,3)
+            service=SearchService(db,ROOT/'config',enable_scheduler=False)
+            server=ThreadingHTTPServer(('127.0.0.1',0),make_handler(db,ROOT/'config',service=service))
+            thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+            try:
+                with patch('engine.classification_service.GeminiGateway') as gateway,patch('engine.dashboard.AcquisitionEngine') as acquisition:
+                    with sync_playwright() as p:
+                        browser=p.chromium.launch(headless=True)
+                        for width in (1440,390):
+                            with self.subTest(width=width):
+                                page=browser.new_page(viewport={'width':width,'height':1000})
+                                requests=[];errors=[]
+                                page.on('request',lambda req:requests.append(req.url))
+                                page.on('pageerror',lambda error:errors.append(str(error)))
+                                # A stale health response must not continually re-adopt a missing job.
+                                with patch.object(service,'active',return_value=dict(job_id='expired',status='RUNNING')):
+                                    page.goto(f'http://127.0.0.1:{server.server_port}/?tab=LIBRARY')
+                                    expect(page.locator('#health-strip')).to_contain_text('Lịch Facebook:')
+                                    expect(page.locator('#applied-scope')).to_contain_text('3 nội dung')
+                                    page.evaluate('pollJob()')
+                                    self.assertIsNone(page.evaluate('state.job'))
+                                    for _ in range(2):page.evaluate('refreshHealth().then(pollJob)')
+                                    self.assertEqual(sum(url.endswith('/api/jobs/expired') for url in requests),1)
+                                    expect(page.locator('#notice')).not_to_contain_text('Không tìm thấy')
+                                # Reconnect to an actual active job, without triggering new acquisition.
+                                active=dict(job_id='current-job',mode='SEARCH',status='RUNNING',rows=[],
+                                    window_start='2026-10-01T00:00:00Z',window_end='2026-10-02T00:00:00Z')
+                                service.jobs={'current-job':active};service.running=True
+                                page.evaluate("state.job='old';pollJob()")
+                                self.assertEqual(page.evaluate('state.job'),'current-job')
+                                page.evaluate('pollJob()')
+                                expect(page.locator('#search-result')).to_contain_text('Đang xử lý')
+                                # Temporary failures retain the subscription for retry.
+                                page.route('**/api/jobs/current-job',lambda route:route.fulfill(status=500,content_type='application/json',body='{"error":"Temporary read error"}'))
+                                page.evaluate('pollJob()');self.assertEqual(page.evaluate('state.job'),'current-job')
+                                page.unroute('**/api/jobs/current-job')
+                                page.reload();expect(page.locator('#health-strip')).to_contain_text('Lịch Facebook:')
+                                page.locator('#tab-SEARCH').click();page.locator('#keywords').fill('VinCons')
+                                page.locator('#search-form button[type=submit]').click()
+                                expect(page.locator('#search-result')).to_contain_text('Đang xử lý')
+                                self.assertEqual(page.evaluate('state.job'),'current-job')
+                                expect(page.locator('#keywords')).to_have_value('VinCons')
+                                self.assertLessEqual(page.evaluate('document.documentElement.scrollWidth'),width)
+                                self.assertEqual(errors,[])
+                                service.jobs={};service.running=False;page.close()
+                        gateway.assert_not_called();acquisition.assert_not_called();browser.close()
+            finally:server.shutdown();server.server_close();service.close();thread.join()
+
     def test_platform_sources_multi_project_schedule_and_saved_state(self):
         import shutil
         from playwright.sync_api import sync_playwright,expect

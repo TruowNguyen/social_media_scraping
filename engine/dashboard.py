@@ -483,9 +483,15 @@ class SearchService:
                 active = next((job for job in self.jobs.values() if job["status"] == "RUNNING"), None)
                 raise SearchAlreadyRunning(active["job_id"] if active else None, active.get("mode", "SEARCH") if active else "SEARCH")
             self.running = True
-            identifier = uuid.uuid4().hex
+            # A resumed durable run is still the same UI job. Generating a new
+            # ID on every retry can evict the job a browser is still following.
+            run_id = resume_report['crawl_run_id'] if resume_report else None
+            identifier = (run_id.removeprefix('dashboard_') if run_id and re.fullmatch(r'dashboard_[a-f0-9]{32}', run_id)
+                          else uuid.uuid5(uuid.NAMESPACE_URL, 'dashboard-resume:' + run_id).hex if run_id
+                          else uuid.uuid4().hex)
             job = dict(job_id=identifier, mode=mode, status="RUNNING", rows=[], warnings=[],
                        window_start=window.start.isoformat(), window_end=window.end.isoformat(), source_count=len(source_ids), project_id=payload.get('project_id'))
+            self.jobs.pop(identifier, None)
             self.jobs[identifier] = job
             while len(self.jobs) > 20:
                 del self.jobs[next(iter(self.jobs))]
@@ -743,7 +749,8 @@ def make_handler(database, config_dir, service=None, conversation_db=None):
                 return
             if path.startswith("/api/jobs/"):
                 job = service.get(path.rsplit("/", 1)[1])
-                self.json_response(job or dict(error="Không tìm thấy lượt tìm kiếm."), 200 if job else 404)
+                self.json_response(job or dict(code="JOB_NOT_FOUND",
+                    error="Phiên theo dõi lượt chạy không còn khả dụng. Dữ liệu đã lưu vẫn có trong Kho dữ liệu và Lịch sử thu thập."), 200 if job else 404)
                 return
             if path == "/api/options":
                 registry = Registry(config_dir)

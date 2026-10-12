@@ -233,6 +233,11 @@ class DashboardTests(unittest.TestCase):
                     self.assertEqual(body["job_id"], "active")
                 else:
                     self.assertEqual(body["error"], expected)
+            with self.assertRaises(HTTPError) as missing:
+                urlopen(url + '/api/jobs/expired', timeout=3)
+            with missing.exception as response:
+                self.assertEqual(response.code, 404)
+                self.assertEqual(json.load(response)['code'], 'JOB_NOT_FOUND')
         finally:
             server.shutdown()
             server.server_close()
