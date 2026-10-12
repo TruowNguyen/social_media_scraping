@@ -1,0 +1,284 @@
+schema_version: project-issue-taxonomy-v1
+taxonomy_version: 1.0.0
+status: APPROVED
+runtime_enabled: true
+created_on: '2026-10-09'
+issues:
+- issue_id: ACCESS_DENIED
+  name: Không thể vào hoặc ra
+  family_id: SITE_ACCESS_CONGESTION
+  definition: Phản ánh bị từ chối hoặc không thể đi qua điểm kiểm soát vào/ra; chưa
+    kết luận việc từ chối là sai quy định.
+  include_examples:
+  - Thẻ còn hạn nhưng bảo vệ không cho tôi vào công trường.
+  - Vé đã mua nhưng đến cổng bị từ chối vào.
+  exclude_examples:
+  - Cổng này chỉ dành cho nhân viên.
+  - Ai biết giờ mở cổng không?
+  required_evidence:
+  - Có claim thực tế về bị từ chối hoặc không thể qua điểm kiểm soát.
+  legacy_domain: SITE_ACCESS_CONGESTION
+  legacy_subcategory: ACCESS_CONTROL_FAILURE
+  legacy_projection_policy: DIRECT
+- issue_id: ACCESS_SYSTEM_FAILURE
+  name: Thiết bị hoặc hệ thống kiểm soát ra vào lỗi
+  family_id: SITE_ACCESS_CONGESTION
+  definition: Phản ánh barrier, máy đọc thẻ, nhận diện khuôn mặt hoặc quét QR tại
+    điểm kiểm soát không hoạt động đúng.
+  include_examples:
+  - Máy nhận diện không nhận mặt, phải nhờ mở cổng.
+  - QR báo đã dùng dù tôi chưa vào lần nào.
+  exclude_examples:
+  - Bán máy quét QR.
+  - App thanh toán lỗi nhưng chưa có vấn đề tại cổng.
+  required_evidence:
+  - Nêu thiết bị/cơ chế kiểm soát và biểu hiện lỗi thực tế; không cần suy ra nguyên
+    nhân kỹ thuật.
+  legacy_domain: SITE_ACCESS_CONGESTION
+  legacy_subcategory: ACCESS_CONTROL_FAILURE
+  legacy_projection_policy: DIRECT
+- issue_id: CHECKIN_BOTTLENECK
+  name: Khâu kiểm tra vào/ra gây chậm
+  family_id: SITE_ACCESS_CONGESTION
+  definition: Chậm trễ được gắn với kiểm tra thẻ, vé, QR, giấy tờ, đăng ký hoặc xử
+    lý ngoại lệ tại điểm kiểm soát.
+  include_examples:
+  - Kiểm tra giấy tờ từng người rất lâu, cả hàng đứng chờ.
+  - Soát vé chậm quá, một người xử lý cả hàng.
+  exclude_examples:
+  - Chờ ở cổng lâu nhưng không nói chậm ở khâu nào.
+  - Hướng dẫn chuẩn bị QR trước khi tới.
+  required_evidence:
+  - Có claim chậm trễ và bằng chứng liên hệ với một khâu kiểm tra vào/ra.
+  legacy_domain: SITE_ACCESS_CONGESTION
+  legacy_subcategory: CHECKIN_BOTTLENECK
+  legacy_projection_policy: DIRECT
+- issue_id: ENTRY_QUEUE
+  name: Xếp hàng hoặc chờ chiều vào
+  family_id: SITE_ACCESS_CONGESTION
+  definition: Phản ánh hàng chờ hoặc thời gian chờ đi vào địa điểm dự án.
+  include_examples:
+  - Chờ 40 phút vẫn chưa được vào công trường.
+  - Hàng vào công viên kéo dài, đứng mãi chưa qua cổng.
+  exclude_examples:
+  - Kẹt cổng quá, không biết chiều nào.
+  - Xếp hàng mua đồ ăn bên trong.
+  required_evidence:
+  - Có claim chờ/xếp hàng và bằng chứng chiều vào từ target hoặc context được dẫn
+    rõ.
+  legacy_domain: SITE_ACCESS_CONGESTION
+  legacy_subcategory: ENTRY_QUEUE
+  legacy_projection_policy: DIRECT
+- issue_id: EXIT_QUEUE
+  name: Xếp hàng hoặc chờ chiều ra
+  family_id: SITE_ACCESS_CONGESTION
+  definition: Phản ánh hàng chờ hoặc thời gian chờ rời địa điểm dự án qua cổng.
+  include_examples:
+  - Tan ca mà chờ nửa tiếng chưa ra khỏi cổng.
+  - Ra khỏi công viên phải xếp hàng rất lâu.
+  exclude_examples:
+  - Kẹt ở cổng nhưng chưa rõ hướng.
+  - Vừa ra cổng thì gặp mưa.
+  required_evidence:
+  - Có claim chờ/xếp hàng và bằng chứng chiều ra; tan ca riêng lẻ không tự chứng minh
+    ùn tắc.
+  legacy_domain: SITE_ACCESS_CONGESTION
+  legacy_subcategory: EXIT_QUEUE
+  legacy_projection_policy: DIRECT
+- issue_id: GATE_CONGESTION_UNSPECIFIED
+  name: Ùn tắc cổng chưa rõ chiều hoặc đối tượng
+  family_id: SITE_ACCESS_CONGESTION
+  definition: Có phản ánh ùn/chờ tại cổng nhưng chưa đủ bằng chứng gán chiều vào/ra,
+    người/xe hoặc nguyên nhân kiểm tra.
+  include_examples:
+  - Kẹt ở cổng hơn nửa tiếng rồi.
+  - Cổng nghẽn quá, đứng mãi không nhúc nhích.
+  exclude_examples:
+  - Cổng đông vui, chụp ảnh rất đẹp.
+  - Đường phố kẹt xe, chưa liên hệ với dự án.
+  required_evidence:
+  - Có claim cản trở/chờ/ùn tại cổng và liên hệ nguồn/dự án đủ để xét; không chỉ từ
+    đông.
+  legacy_domain: SITE_ACCESS_CONGESTION
+  legacy_subcategory: null
+  legacy_projection_policy: REVIEW_REQUIRE_SUBCATEGORY
+- issue_id: VEHICLE_CONGESTION
+  name: Ùn tắc luồng xe
+  family_id: SITE_ACCESS_CONGESTION
+  definition: Xe ùn ứ, chắn lối hoặc di chuyển chậm tại cổng, lối tiếp cận hoặc bãi
+    xe liên quan dự án.
+  include_examples:
+  - Xe tải nối đuôi kín cổng công trường.
+  - Bãi xe công viên ùn, ô tô không ra được.
+  exclude_examples:
+  - Bãi xe có nhiều ô tô nhưng lưu thông bình thường.
+  - Bán xe tải giá tốt.
+  required_evidence:
+  - Xác định có xe và trở ngại lưu thông liên quan phạm vi dự án; không suy xe từ
+    hình dung của model.
+  legacy_domain: SITE_ACCESS_CONGESTION
+  legacy_subcategory: VEHICLE_CONGESTION
+  legacy_projection_policy: DIRECT
+- issue_id: WORKER_CONGESTION
+  name: Công nhân ùn ứ tại điểm ra vào
+  family_id: SITE_ACCESS_CONGESTION
+  definition: Luồng công nhân bị dồn hoặc ùn tại cổng/điểm kiểm soát của công trường.
+  include_examples:
+  - Công nhân ca sáng dồn kín cổng, không di chuyển được.
+  exclude_examples:
+  - Tuyển thêm 200 công nhân.
+  - Group công nhân đăng đông quá nhưng không nói chuyện cổng.
+  required_evidence:
+  - Claim nêu công nhân và tình trạng ùn/chờ tại điểm ra vào; tên group công nhân
+    không đủ.
+  legacy_domain: SITE_ACCESS_CONGESTION
+  legacy_subcategory: WORKER_CONGESTION
+  legacy_projection_policy: DIRECT
+- issue_id: EXTERNAL_TRAFFIC_IMPACT
+  name: Giao thông ngoài dự án ảnh hưởng tiếp cận
+  family_id: SITE_ACCESS_CONGESTION
+  definition: Ùn tắc/sự cố đường bên ngoài được phản ánh làm khó việc đến hoặc rời
+    dự án.
+  include_examples:
+  - Đường dẫn vào công viên tắc, xe đứng hơn 30 phút.
+  exclude_examples:
+  - Hải Phòng hôm nay kẹt xe, chưa xác định liên quan dự án.
+  - Dự báo mai có thể đông.
+  required_evidence:
+  - Có claim ảnh hưởng tiếp cận và liên hệ đường/lối vào/ra dự án.
+  legacy_domain: SITE_ACCESS_CONGESTION
+  legacy_subcategory: EXTERNAL_TRAFFIC_IMPACT
+  legacy_projection_policy: DIRECT
+- issue_id: SERVICE_DELAY
+  name: Chậm phục vụ hoặc xử lý yêu cầu
+  family_id: CUSTOMER_COMPLAINT
+  definition: Phản ánh phải chờ hoặc yêu cầu được xử lý chậm ở dịch vụ ngoài khâu
+    kiểm soát cổng.
+  include_examples:
+  - Quầy hỗ trợ xử lý đổi vé quá lâu.
+  - Báo bộ phận hỗ trợ từ sáng mà chưa xử lý hồ sơ.
+  exclude_examples:
+  - Chờ soát vé ở cổng; dùng CHECKIN_BOTTLENECK khi có căn cứ.
+  - Thời gian xử lý theo hướng dẫn là hai ngày, chưa có phàn nàn.
+  required_evidence:
+  - Có claim chậm trễ phục vụ/xử lý; không tự suy delay từ một mốc thời gian.
+  legacy_domain: CUSTOMER_COMPLAINT
+  legacy_subcategory: SERVICE_DELAY
+  legacy_projection_policy: DIRECT
+- issue_id: NO_RESPONSE
+  name: Không phản hồi sau khi liên hệ
+  family_id: CUSTOMER_COMPLAINT
+  definition: Người viết phản ánh đã gọi, nhắn, gửi yêu cầu nhưng không nhận được
+    phản hồi.
+  include_examples:
+  - Nhắn hỗ trợ ba lần chưa ai trả lời.
+  exclude_examples:
+  - Cho hỏi số hotline.
+  - Tôi chưa gọi thử.
+  required_evidence:
+  - Có hành vi liên hệ và claim không được phản hồi; không đoán người viết đã liên
+    hệ.
+  legacy_domain: CUSTOMER_COMPLAINT
+  legacy_subcategory: NO_RESPONSE
+  legacy_projection_policy: DIRECT
+- issue_id: APP_SYSTEM_ISSUE
+  name: Lỗi ứng dụng hoặc dịch vụ số
+  family_id: CUSTOMER_COMPLAINT
+  definition: Phản ánh lỗi đăng nhập, mua vé, thanh toán, đăng ký hoặc chức năng số;
+    khác lỗi thiết bị kiểm soát tại cổng.
+  include_examples:
+  - App trừ tiền nhưng không hiện vé.
+  - Cổng đăng ký hồ sơ cứ báo lỗi không gửi được.
+  exclude_examples:
+  - Máy quét tại cổng không đọc QR; dùng ACCESS_SYSTEM_FAILURE.
+  - Hướng dẫn tải app.
+  required_evidence:
+  - Nêu chức năng/app và biểu hiện lỗi; không tự kết luận nguyên nhân hay trách nhiệm
+    bên cung cấp.
+  legacy_domain: CUSTOMER_COMPLAINT
+  legacy_subcategory: APP_SYSTEM_ISSUE
+  legacy_projection_policy: DIRECT
+- issue_id: STAFF_ATTITUDE
+  name: Phản ánh thái độ hoặc hành vi phục vụ
+  family_id: CUSTOMER_COMPLAINT
+  definition: Claim về cách giao tiếp/hành xử không phù hợp của nhân sự phục vụ hoặc
+    kiểm soát.
+  include_examples:
+  - Bảo vệ quát khách khi tôi hỏi lối vào.
+  exclude_examples:
+  - Cổng chậm nhưng không nói thái độ nhân viên.
+  - Nhân viên hôm nay rất nhiệt tình.
+  required_evidence:
+  - Có claim thái độ/hành vi; không suy thái độ từ việc từ chối vào đúng hay sai quy
+    định.
+  legacy_domain: CUSTOMER_COMPLAINT
+  legacy_subcategory: STAFF_ATTITUDE
+  legacy_projection_policy: DIRECT
+- issue_id: UNRESOLVED_ISSUE
+  name: Vấn đề đã báo nhưng chưa được giải quyết
+  family_id: CUSTOMER_COMPLAINT
+  definition: Người viết đã phản ánh/yêu cầu xử lý, vấn đề vẫn còn hoặc tái diễn;
+    khác chỉ chưa có câu trả lời.
+  include_examples:
+  - Đã báo lỗi thẻ tuần trước, hôm nay vẫn không vào được.
+  exclude_examples:
+  - Thẻ vừa lỗi lần đầu.
+  - Đã được xử lý xong, cảm ơn.
+  required_evidence:
+  - Có claim đã báo/yêu cầu trước đó và hiện chưa giải quyết; cùng lúc có thể gán
+    issue nguyên thủy.
+  legacy_domain: CUSTOMER_COMPLAINT
+  legacy_subcategory: UNRESOLVED_ISSUE
+  legacy_projection_policy: DIRECT
+- issue_id: REFUND_DISPUTE
+  name: Phản ánh hoàn tiền
+  family_id: CUSTOMER_COMPLAINT
+  definition: Claim không/chậm/thiếu hoàn tiền hoặc tranh chấp việc hoàn tiền của
+    giao dịch liên quan dự án.
+  include_examples:
+  - Vé hủy đã xác nhận mà hai tuần chưa hoàn tiền.
+  exclude_examples:
+  - Bán vé, cam kết hoàn tiền.
+  - Chính sách hoàn tiền thế nào?
+  - Vay tiền chưa trả, chưa xác định giao dịch dịch vụ dự án.
+  required_evidence:
+  - Có giao dịch/yêu cầu hoàn tiền và claim vấn đề; giữ attribution bên bán/đại lý
+    khi có, không tự quy cho dự án.
+  legacy_domain: CUSTOMER_COMPLAINT
+  legacy_subcategory: OTHER_COMPLAINT
+  legacy_projection_policy: DIRECT
+- issue_id: OTHER_CUSTOMER_COMPLAINT
+  name: Phản ánh dịch vụ khác
+  family_id: CUSTOMER_COMPLAINT
+  definition: Claim vấn đề về trải nghiệm/dịch vụ liên quan dự án, không thuộc các
+    nhãn cụ thể đã bật.
+  include_examples:
+  - Nhà vệ sinh công viên quá bẩn, báo rồi không cải thiện.
+  exclude_examples:
+  - Không rõ người viết đang phản ánh gì.
+  - Issue cụ thể đã đủ bằng chứng và được bật trong profile.
+  required_evidence:
+  - Có claim dịch vụ rõ và liên hệ dự án; ghi summary cụ thể và đề xuất nhãn mới,
+    không dùng làm nơi chứa mọi nội dung.
+  legacy_domain: CUSTOMER_COMPLAINT
+  legacy_subcategory: OTHER_COMPLAINT
+  legacy_projection_policy: DIRECT
+- issue_id: OTHER_RELEVANT
+  name: Tín hiệu liên quan ngoài nhóm ưu tiên
+  family_id: OTHER_RELEVANT
+  definition: Thông tin thực tế liên quan mục tiêu theo dõi dự án nhưng không phải
+    complaint dịch vụ hay ùn tắc đã định nghĩa; cần review phạm vi.
+  include_examples:
+  - Phản ánh sự cố an toàn ở lối tiếp cận nhưng chưa có nhãn chi tiết.
+  exclude_examples:
+  - Quảng cáo thuần túy.
+  - Text không đọc được.
+  - Complaint rõ đã có nhãn phù hợp.
+  required_evidence:
+  - Có signal cụ thể và lý do liên quan, không chỉ tên dự án; phạm vi mở rộng chưa
+    duyệt cần REVIEW.
+  legacy_domain: OTHER_RELEVANT
+  legacy_subcategory: null
+  legacy_projection_policy: DIRECT
+approval_source: User accepted taxonomy baseline and requested runtime classifier
+  integration on 2026-10-09; mentor/held-out quality acceptance remains pending

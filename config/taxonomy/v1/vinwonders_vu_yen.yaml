@@ -1,0 +1,56 @@
+schema_version: project-issue-taxonomy-v1
+taxonomy_version: 1.0.0
+status: APPROVED
+runtime_enabled: true
+project_id: vinwonders_vu_yen
+name: VinWonders Vũ Yên
+scope_type: PROJECT
+registry_status: EXISTS
+common_catalog: common.yaml
+source_ids:
+- fb_group_vinwondersroyalparkhaiphong
+- fb_group_reviewhaiphong.vinwondersvuyen
+- fb_group_1280258833374137
+- fb_group_1463368281672061
+- fb_group_1500004461400003
+- fb_group_681283966885365
+- fb_group_718379403948782
+issue_priorities:
+  ACCESS_DENIED: P0
+  ACCESS_SYSTEM_FAILURE: P0
+  CHECKIN_BOTTLENECK: P0
+  ENTRY_QUEUE: P0
+  EXIT_QUEUE: P0
+  GATE_CONGESTION_UNSPECIFIED: P0
+  VEHICLE_CONGESTION: P0
+  EXTERNAL_TRAFFIC_IMPACT: P0
+  SERVICE_DELAY: P1
+  NO_RESPONSE: P1
+  APP_SYSTEM_ISSUE: P1
+  STAFF_ATTITUDE: P1
+  UNRESOLVED_ISSUE: P1
+  REFUND_DISPUTE: P1
+  OTHER_CUSTOMER_COMPLAINT: P1
+  OTHER_RELEVANT: P2
+not_enabled_issue_ids:
+- WORKER_CONGESTION
+attention_topics:
+- Vé/QR bị từ chối hoặc báo đã sử dụng; soát vé chậm; không suy nguyên nhân lỗi hệ
+  thống khi chưa rõ.
+- Hàng chờ cổng vào/cổng ra, bãi xe và đường tiếp cận; hàng chờ trò chơi/quầy dịch
+  vụ phân loại riêng.
+- App mua vé/thanh toán, hỗ trợ đổi vé và hoàn tiền.
+- Đại lý/người bán vé độc lập khác đơn vị vận hành công viên; không quy trách nhiệm
+  theo group name.
+- Group bán vé vẫn có complaint thật; parent quảng cáo không chặn child complaint.
+scope_review_topics:
+- Vũ Yên/Royal Island riêng lẻ không đủ khẳng định công viên; giữ project unresolved
+  hoặc conflict.
+- Chất lượng tiện ích, vệ sinh, giá thu sai và dịch vụ chưa có nhãn chi tiết dùng
+  OTHER_CUSTOMER_COMPLAINT nếu evidence rõ.
+- An toàn trò chơi/sự cố sức khỏe là đề xuất mở rộng; giữ REVIEW/OTHER_RELEVANT và
+  không kết luận nguyên nhân hay hướng dẫn y tế.
+- Hàng chờ trò chơi có thể SERVICE_DELAY, không ENTRY_QUEUE nếu không phải cổng vào
+  dự án.
+approval_source: User accepted taxonomy baseline and requested runtime classifier
+  integration on 2026-10-09; mentor/held-out quality acceptance remains pending

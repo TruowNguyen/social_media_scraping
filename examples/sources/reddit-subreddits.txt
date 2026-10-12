@@ -1,0 +1,2 @@
+# One subreddit name per line, without r/.
+economics

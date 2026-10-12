@@ -1,0 +1,67 @@
+schema_version: threads-config-v1
+version: 2
+enabled: true
+provider: THREADS_BROWSER
+verification:
+  status: LIVE_PARTIAL
+  checked_at: '2026-10-11T16:29:51.881816Z'
+  search_recent: SUPPORTED
+  public_replies: SUPPORTED
+  parent_mapping: UNVERIFIED
+  evidence_report: reports/threads-live-pilot-v3.json
+queries:
+- query_id: threads_vincons_name
+  project_id: vincons
+  version: 1
+  type: KEYWORD
+  value: VinCons
+  enabled: true
+  ambiguous: false
+  archived: false
+- query_id: threads_vwy_name
+  project_id: vinwonders_vu_yen
+  version: 1
+  type: KEYWORD
+  value: VinWonders Vũ Yên
+  enabled: true
+  ambiguous: false
+  archived: false
+- query_id: threads_vwy_alias
+  project_id: vinwonders_vu_yen
+  version: 1
+  type: KEYWORD
+  value: VinWonder Vũ Yên
+  enabled: true
+  ambiguous: false
+  archived: false
+- query_id: threads_vwy_spaced
+  project_id: vinwonders_vu_yen
+  version: 1
+  type: KEYWORD
+  value: Vin Wonders Vũ Yên
+  enabled: true
+  ambiguous: false
+  archived: false
+- query_id: threads_vwy_tag
+  project_id: vinwonders_vu_yen
+  version: 1
+  type: TAG_TEXT
+  value: '#VinWondersVuYen'
+  enabled: false
+  ambiguous: false
+  archived: false
+- query_id: threads_vwy_discovery
+  project_id: vinwonders_vu_yen
+  version: 1
+  type: KEYWORD
+  value: Vũ Yên
+  enabled: false
+  ambiguous: true
+  archived: false
+limits:
+  candidates_per_query: 100
+  pages_per_query: 5
+  replies_per_conversation: 100
+  rescan_roots: 20
+  seconds_per_query: 120
+  seconds_per_run: 1200

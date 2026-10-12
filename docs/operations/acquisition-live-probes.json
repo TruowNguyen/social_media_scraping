@@ -1,0 +1,16 @@
+{
+  "date_local": "2026-10-08",
+  "timezone": "Asia/Saigon",
+  "evidence_level": "LIVE_RESOURCE_PROBES_ONLY",
+  "full_acquisition_live_verified": false,
+  "sources_auto_enabled": 0,
+  "api_attempts": 1,
+  "probes": [
+    {"source_id": "fb_group_1675953926771851", "mode": "ACCESS_PROBE", "checked_at": "2026-10-08T10:04:43.906015Z", "status": "ACCESSIBLE", "note": "Initial listing-selector probe; did not validate native item identity. Superseded by stricter probe below."},
+    {"source_id": "google_social_vincons", "mode": "SOCIAL_LINK_DISCOVERY", "effective_query": "site:facebook.com/groups \"VinCons\"", "checked_at": "2026-10-08T10:04:44.984714Z", "status": "AUTH_REQUIRED", "error_code": "SERPAPI_INVALID_KEY", "api_attempts": 1, "candidates_observed": 0},
+    {"source_id": "tt_search_vincons", "mode": "KEYWORD_SEARCH", "search_keyword": "VinCons", "checked_at": "2026-10-08T10:06:13.817961Z", "status": "ACCESS_DENIED", "error_code": "CAPTCHA", "sample_item_ids": []},
+    {"source_id": "tt_search_vincons", "mode": "HASHTAG_SEARCH", "search_keyword": "#VinCons", "checked_at": "2026-10-08T10:06:23.876006Z", "status": "EXTRACTION_FAILED", "error_code": "LISTING_SELECTOR_MISMATCH", "sample_item_ids": []},
+    {"source_id": "fb_group_1675953926771851", "mode": "ACCESS_PROBE", "checked_at": "2026-10-08T10:06:43.789149Z", "status": "AUTH_REQUIRED", "error_code": "LOGIN_REQUIRED", "requires_login": true, "sample_item_ids": []}
+  ],
+  "limitations": ["No approved source was enabled or full-fetched by these probes.", "No nonempty full-item sample or fixed-window coverage was verified live.", "Hashtag selector mismatch does not prove CAPTCHA, private access or no results.", "API errors are sanitized; key values and browser credentials are absent."]
+}

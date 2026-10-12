@@ -1,0 +1,24 @@
+{
+  "assets": [
+    {
+      "canonical_name": "Energy Select Sector SPDR Fund",
+      "Symbol": "XLE",
+      "asset_class": "ETF",
+      "asset_id": "etf:XLE",
+      "aliases": ["XLE", "Energy Select Sector SPDR"],
+      "topics": ["energy stocks", "oil stocks", "oil companies", "oil and gas companies"],
+      "description": "a US exchange-traded fund tracking large energy, oil and gas companies",
+      "context_inference": true
+    },
+    {
+      "canonical_name": "Example Oil Company",
+      "Symbol": "EXMPL",
+      "asset_class": "equity",
+      "asset_id": "equity:EXMPL",
+      "aliases": ["Example Oil Company", "EXMPL"],
+      "topics": ["oil producer", "upstream energy", "crude production"],
+      "description": "an oil and gas exploration and production company",
+      "context_inference": false
+    }
+  ]
+}

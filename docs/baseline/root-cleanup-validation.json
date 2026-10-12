@@ -1,0 +1,92 @@
+{
+  "date": "2026-10-08",
+  "scope": "Remove root Python wrappers and compatibility facade",
+  "status": "OFFLINE_VERIFIED",
+  "checks": {
+    "unittest": {
+      "status": "PASS",
+      "cases": 31,
+      "command": "python -m unittest discover -s tests -v"
+    },
+    "schema": {
+      "status": "PASS",
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "-m",
+        "tests.contract.legacy_schema"
+      ]
+    },
+    "x_retry": {
+      "status": "PASS",
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "-m",
+        "tests.integration.legacy_x_retry"
+      ]
+    },
+    "demo": {
+      "status": "PASS",
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "-X",
+        "utf8",
+        "-m",
+        "engine.legacy.demo"
+      ],
+      "baseline_equal": true,
+      "canonical_sha256": "bd6f88176669c0468419d5782542fe97776fd9be0649bf99df3294ff08002c53"
+    },
+    "dispatcher": {
+      "status": "PASS",
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "-m",
+        "engine.runtime",
+        "--help"
+      ]
+    },
+    "installed_cli": {
+      "status": "PASS",
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\social-scrape.exe",
+        "--help"
+      ]
+    },
+    "bash_syntax": {
+      "status": "PASS",
+      "command": [
+        "C:/Program Files/Git/bin/bash.exe",
+        "-n",
+        "run-scrapers.sh"
+      ]
+    },
+    "root_and_import_cleanup": {
+      "status": "PASS",
+      "root_python_files": 0,
+      "compiled_files": 59
+    },
+    "wheel": {
+      "status": "PASS",
+      "command": [
+        "C:/Users/asus/AppData/Local/Programs/Python/Python311/Scripts/uv.exe",
+        "build",
+        "--wheel",
+        "--python",
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "--out-dir",
+        ".venv/refactor/cleanup-dist",
+        "--cache-dir",
+        ".venv/uv-cache"
+      ],
+      "entries": 54,
+      "root_modules_excluded": true
+    },
+    "docs_links": {
+      "status": "PASS",
+      "local_links": 196
+    }
+  },
+  "live_requests": 0,
+  "formal_acp": false,
+  "completed_at": "2026-10-08T09:12:21.423200+00:00"
+}

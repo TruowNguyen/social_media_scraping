@@ -1,0 +1,2 @@
+# Additive browser tier; collection/model dependency pins are unchanged.
+playwright==1.63.0

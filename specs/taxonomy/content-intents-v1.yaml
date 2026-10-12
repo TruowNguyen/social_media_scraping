@@ -1,0 +1,33 @@
+# Intent taxonomy is orthogonal to project issue taxonomy. Never delete raw.
+schema_version: content-intents-v1
+version: "1.0.0"
+labels:
+  ADVERTISING:
+    definition: Quảng bá thương hiệu, sản phẩm, dịch vụ hoặc chiến dịch nhằm thu hút chú ý; chưa cần có giao dịch cụ thể.
+    examples: ["Giới thiệu dịch vụ mới, trải nghiệm ưu đãi khai trương"]
+  SALES:
+    definition: Chào bán hoặc nhận đặt hàng/đặt vé cụ thể, có giá, điều kiện hoặc cách liên hệ để giao dịch.
+    examples: ["Bán vé VinWonders giá 300k, inbox đặt vé"]
+  RECRUITMENT:
+    definition: Tuyển người, tìm việc, chào mời ứng tuyển.
+  RENTAL:
+    definition: Chào cho thuê hoặc tìm thuê tài sản/dịch vụ.
+  BUY_SELL:
+    definition: Tin mua bán, thanh lý hoặc sang nhượng.
+  LOAN_DEBT:
+    definition: Chào vay, tìm khoản vay, giải ngân, mua bán nợ; không tự áp cho phản ánh nợ lương.
+  GOODS_EXCHANGE:
+    definition: Đổi hoặc trao đổi hàng hóa; trao đổi ca làm không thuộc nhãn này.
+  COMPLAINT:
+    definition: Phản ánh hoặc khiếu nại thực tế; có thể đồng thời nhắc quảng cáo/bán hàng.
+  INFORMATIONAL:
+    definition: Thông tin, hướng dẫn, câu hỏi trung tính; không tự là phản ánh.
+  UNKNOWN:
+    definition: Thiếu bằng chứng để xác định intent.
+policy:
+  commercial_only: DROP
+  commercial_with_real_complaint: KEEP_OR_REVIEW_BY_ISSUE_EVIDENCE
+  ambiguous_or_missing: REVIEW
+  multiple_labels_allowed: true
+  parent_intent_gates_child: false
+  delete_raw_on_drop: false

@@ -1,0 +1,6 @@
+# Optional local financial/multilingual sentiment, asset NLI, and Whisper.
+# Install alongside requirements.txt. Model weights download on first use.
+transformers>=4.55,<5
+sentencepiece>=0.2
+torch>=2.2
+faster-whisper

@@ -1,0 +1,27 @@
+# Index first-party code only; keep credentials, collected data and documents local.
+.git/
+.venv/
+venv/
+__pycache__/
+x-tweet-fetcher/
+graphify-out/
+.env*
+AGENTS.md
+CLAUDE.md
+keywords/
+sources/
+logs/
+reports/
+dedup/
+sessions/
+*-tweets/
+*-transcripts/
+*-posts/
+tiktok-videos/
+*.pdf
+*.tex
+*.aux
+*.log
+*.db
+*.session*
+*.bak*

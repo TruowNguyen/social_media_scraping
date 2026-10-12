@@ -1,0 +1,345 @@
+schema_version: source-registry-config-v1
+sources:
+- source_id: fb_group_139108668844789
+  platform: facebook
+  source_type: FACEBOOK_GROUP
+  name: Hội Nhóm Công Nhân Vincons Xây Dựng Nam Bắc
+  platform_group_ref: '139108668844789'
+  url: https://www.facebook.com/groups/139108668844789
+  project: null
+  location: null
+  priority: P1
+  enabled: true
+  monitoring_scope: RECENT_POSTS_AND_VIDEOS
+  access_type: PUBLIC
+  requires_login: true
+  verification_status: VERIFIED
+  name_verified: true
+  name_verification_method: USER_MANUAL_CONFIRMATION
+  name_verified_on: '2026-10-08'
+  access_verified: true
+  access_verification_method: FACEBOOK_PLAYWRIGHT_NATIVE_ID_AND_TIME_LIVE_SAMPLE
+  access_verified_on: '2026-10-08'
+  submitted_on: '2026-10-08'
+  owner: null
+  notes: 'User confirmed public visibility. Live stored-profile Chromium pilot verified
+    native post ID and publication timestamp. Bounded sample only; chronological ordering
+    and full-window coverage unverified. Anonymous access/login necessity not tested.
+    Project/location/relevance not inferred. Evidence: reports/facebook-seven-groups-20261008/report.json'
+- source_id: fb_group_880263084346112
+  platform: facebook
+  source_type: FACEBOOK_GROUP
+  name: TUYỂN DỤNG CÔNG NHÂN CƠ HỮU VINCONS
+  platform_group_ref: '880263084346112'
+  url: https://www.facebook.com/groups/880263084346112
+  project: null
+  location: null
+  priority: P1
+  enabled: true
+  monitoring_scope: RECENT_POSTS_AND_VIDEOS
+  access_type: PUBLIC
+  requires_login: true
+  verification_status: VERIFIED
+  name_verified: true
+  name_verification_method: USER_MANUAL_CONFIRMATION
+  name_verified_on: '2026-10-08'
+  access_verified: true
+  access_verification_method: FACEBOOK_PLAYWRIGHT_NATIVE_ID_AND_TIME_LIVE_SAMPLE
+  access_verified_on: '2026-10-08'
+  submitted_on: '2026-10-08'
+  owner: null
+  notes: 'User confirmed public visibility. Live stored-profile Chromium pilot verified
+    native post ID and publication timestamp. Bounded sample only; chronological ordering
+    and full-window coverage unverified. Anonymous access/login necessity not tested.
+    Project/location/relevance not inferred. Evidence: reports/facebook-seven-groups-20261008/report.json'
+- source_id: fb_group_2249052912495339
+  platform: facebook
+  source_type: FACEBOOK_GROUP
+  name: Cộng Đồng Công Nhân Vincons
+  platform_group_ref: '2249052912495339'
+  url: https://www.facebook.com/groups/2249052912495339
+  project: null
+  location: null
+  priority: P1
+  enabled: true
+  monitoring_scope: RECENT_POSTS_AND_VIDEOS
+  access_type: PUBLIC
+  requires_login: true
+  verification_status: VERIFIED
+  name_verified: false
+  name_verification_method: null
+  name_verified_on: null
+  access_verified: true
+  access_verification_method: FACEBOOK_PLAYWRIGHT_NATIVE_ID_AND_TIME_LIVE_SAMPLE
+  access_verified_on: '2026-10-08'
+  submitted_on: '2026-10-08'
+  owner: null
+  notes: 'User confirmed public visibility. Live stored-profile Chromium pilot verified
+    native post ID and publication timestamp. Bounded sample only; chronological ordering
+    and full-window coverage unverified. Anonymous access/login necessity not tested.
+    Project/location/relevance not inferred. Evidence: reports/facebook-seven-groups-20261008/report.json'
+- source_id: fb_group_669205626514948
+  platform: facebook
+  source_type: FACEBOOK_GROUP
+  name: Hội công nhân Vincons Suối Khoáng Mỹ Lâm
+  platform_group_ref: '669205626514948'
+  url: https://www.facebook.com/groups/669205626514948
+  project: null
+  location: null
+  priority: P1
+  enabled: true
+  monitoring_scope: RECENT_POSTS_AND_VIDEOS
+  access_type: PUBLIC
+  requires_login: true
+  verification_status: VERIFIED
+  name_verified: true
+  name_verification_method: USER_MANUAL_CONFIRMATION
+  name_verified_on: '2026-10-08'
+  access_verified: true
+  access_verification_method: FACEBOOK_PLAYWRIGHT_NATIVE_ID_AND_TIME_LIVE_SAMPLE
+  access_verified_on: '2026-10-08'
+  submitted_on: '2026-10-08'
+  owner: null
+  notes: 'User confirmed public visibility. Live stored-profile Chromium pilot verified
+    native post ID and publication timestamp. Bounded sample only; chronological ordering
+    and full-window coverage unverified. Anonymous access/login necessity not tested.
+    Project/location/relevance not inferred. Evidence: reports/facebook-seven-groups-20261008/report.json'
+- source_id: fb_group_suanhathuduc
+  platform: facebook
+  source_type: FACEBOOK_GROUP
+  name: HỘI CÔNG NHÂN XÂY DỰNG VINCONS
+  platform_group_ref: suanhathuduc
+  url: https://www.facebook.com/groups/suanhathuduc
+  project: null
+  location: null
+  priority: P1
+  enabled: true
+  monitoring_scope: RECENT_POSTS_AND_VIDEOS
+  access_type: PUBLIC
+  requires_login: true
+  verification_status: VERIFIED
+  name_verified: true
+  name_verification_method: USER_MANUAL_CONFIRMATION
+  name_verified_on: '2026-10-08'
+  access_verified: true
+  access_verification_method: FACEBOOK_PLAYWRIGHT_NATIVE_ID_AND_TIME_LIVE_SAMPLE
+  access_verified_on: '2026-10-08'
+  submitted_on: '2026-10-08'
+  owner: null
+  notes: 'User confirmed public visibility. Live stored-profile Chromium pilot verified
+    native post ID and publication timestamp. Bounded sample only; chronological ordering
+    and full-window coverage unverified. Anonymous access/login necessity not tested.
+    Project/location/relevance not inferred. Evidence: reports/facebook-seven-groups-20261008/report.json'
+- source_id: fb_group_144732306144575
+  platform: facebook
+  source_type: FACEBOOK_GROUP
+  name: CÔNG TY VINCONS (TẬP ĐOÀN VINGROUP )
+  platform_group_ref: '144732306144575'
+  url: https://www.facebook.com/groups/144732306144575
+  project: null
+  location: null
+  priority: P1
+  enabled: true
+  monitoring_scope: RECENT_POSTS_AND_VIDEOS
+  access_type: PUBLIC
+  requires_login: true
+  verification_status: VERIFIED
+  name_verified: true
+  name_verification_method: USER_MANUAL_CONFIRMATION
+  name_verified_on: '2026-10-08'
+  access_verified: true
+  access_verification_method: FACEBOOK_PLAYWRIGHT_NATIVE_ID_AND_TIME_LIVE_SAMPLE
+  access_verified_on: '2026-10-08'
+  submitted_on: '2026-10-08'
+  owner: null
+  notes: 'User confirmed public visibility. Live stored-profile Chromium pilot verified
+    native post ID and publication timestamp. Bounded sample only; chronological ordering
+    and full-window coverage unverified. Anonymous access/login necessity not tested.
+    Project/location/relevance not inferred. Evidence: reports/facebook-seven-groups-20261008/report.json'
+- source_id: fb_group_1675953926771851
+  platform: facebook
+  source_type: FACEBOOK_GROUP
+  name: HỘI CÔNG NHÂN VINCONS
+  platform_group_ref: '1675953926771851'
+  url: https://www.facebook.com/groups/1675953926771851
+  project: null
+  location: null
+  priority: P1
+  enabled: true
+  monitoring_scope: RECENT_POSTS_AND_VIDEOS
+  access_type: PUBLIC
+  requires_login: true
+  verification_status: VERIFIED
+  name_verified: true
+  name_verification_method: USER_MANUAL_CONFIRMATION
+  name_verified_on: '2026-10-08'
+  access_verified: true
+  access_verification_method: FACEBOOK_PLAYWRIGHT_NATIVE_ID_AND_TIME_LIVE_SAMPLE
+  access_verified_on: '2026-10-08'
+  submitted_on: '2026-10-08'
+  owner: null
+  notes: 'User confirmed public visibility. Live stored-profile Chromium pilot verified
+    native post ID and publication timestamp. Bounded sample only; chronological ordering
+    and full-window coverage unverified. Anonymous access/login necessity not tested.
+    Project/location/relevance not inferred. Evidence: reports/facebook-seven-groups-20261008/report.json'
+- source_id: fb_group_vinwondersroyalparkhaiphong
+  platform: facebook
+  source_type: FACEBOOK_GROUP
+  name: Review VinWonders Vũ Yên Hải Phòng
+  platform_group_ref: vinwondersroyalparkhaiphong
+  url: https://www.facebook.com/groups/vinwondersroyalparkhaiphong
+  project: null
+  location: null
+  priority: P1
+  enabled: true
+  monitoring_scope: RECENT_POSTS_AND_VIDEOS
+  access_type: PUBLIC
+  requires_login: true
+  verification_status: VERIFIED
+  name_verified: true
+  name_verification_method: USER_MANUAL_CONFIRMATION
+  submitted_on: '2026-10-09'
+  access_verified: true
+  access_verified_on: '2026-10-09'
+  access_verification_method: FACEBOOK_PUBLIC_ABOUT_AND_BROWSER_ITEM_PROBE
+  notes: User-submitted project source; verified public About UI and bounded browser
+    item probe. Anonymous access/full coverage not verified. Configured to use authenticated
+    browser profile; actual anonymous-login requirement remains untested.
+- source_id: fb_group_reviewhaiphong.vinwondersvuyen
+  platform: facebook
+  source_type: FACEBOOK_GROUP
+  name: 'REVIEW HẢI PHÒNG - VÉ VINWONDERS VŨ YÊN: TỪ A ĐẾN Z'
+  platform_group_ref: reviewhaiphong.vinwondersvuyen
+  url: https://www.facebook.com/groups/reviewhaiphong.vinwondersvuyen
+  project: null
+  location: null
+  priority: P1
+  enabled: true
+  monitoring_scope: RECENT_POSTS_AND_VIDEOS
+  access_type: PUBLIC
+  requires_login: true
+  verification_status: VERIFIED
+  name_verified: true
+  name_verification_method: USER_MANUAL_CONFIRMATION
+  submitted_on: '2026-10-09'
+  access_verified: true
+  access_verified_on: '2026-10-09'
+  access_verification_method: FACEBOOK_PUBLIC_ABOUT_AND_BROWSER_ITEM_PROBE
+  notes: User-submitted project source; verified public About UI and bounded browser
+    item probe. Anonymous access/full coverage not verified. Configured to use authenticated
+    browser profile; actual anonymous-login requirement remains untested.
+- source_id: fb_group_1280258833374137
+  platform: facebook
+  source_type: FACEBOOK_GROUP
+  name: Vé Công Viên VinWonders Vũ Yên Hải Phòng - Review Vũ Yên
+  platform_group_ref: '1280258833374137'
+  url: https://www.facebook.com/groups/1280258833374137
+  project: null
+  location: null
+  priority: P1
+  enabled: true
+  monitoring_scope: RECENT_POSTS_AND_VIDEOS
+  access_type: PUBLIC
+  requires_login: true
+  verification_status: VERIFIED
+  name_verified: true
+  name_verification_method: USER_MANUAL_CONFIRMATION
+  submitted_on: '2026-10-09'
+  access_verified: true
+  access_verified_on: '2026-10-09'
+  access_verification_method: FACEBOOK_PUBLIC_ABOUT_AND_BROWSER_ITEM_PROBE
+  notes: User-submitted project source; verified public About UI and bounded browser
+    item probe. Anonymous access/full coverage not verified. Configured to use authenticated
+    browser profile; actual anonymous-login requirement remains untested.
+- source_id: fb_group_1463368281672061
+  platform: facebook
+  source_type: FACEBOOK_GROUP
+  name: Săn Vé VinWonder Vũ Yên Hải Phòng Giá Rẻ - Review Vinwonder
+  platform_group_ref: '1463368281672061'
+  url: https://www.facebook.com/groups/1463368281672061
+  project: null
+  location: null
+  priority: P1
+  enabled: true
+  monitoring_scope: RECENT_POSTS_AND_VIDEOS
+  access_type: PUBLIC
+  requires_login: true
+  verification_status: VERIFIED
+  name_verified: true
+  name_verification_method: USER_MANUAL_CONFIRMATION
+  submitted_on: '2026-10-09'
+  access_verified: true
+  access_verified_on: '2026-10-09'
+  access_verification_method: FACEBOOK_PUBLIC_ABOUT_AND_BROWSER_ITEM_PROBE
+  notes: User-submitted project source; verified public About UI and bounded browser
+    item probe. Anonymous access/full coverage not verified. Configured to use authenticated
+    browser profile; actual anonymous-login requirement remains untested.
+- source_id: fb_group_1500004461400003
+  platform: facebook
+  source_type: FACEBOOK_GROUP
+  name: Vé Vinwonders Vũ Yên Hải Phòng - Review Vin Vũ Yên
+  platform_group_ref: '1500004461400003'
+  url: https://www.facebook.com/groups/1500004461400003
+  project: null
+  location: null
+  priority: P1
+  enabled: true
+  monitoring_scope: RECENT_POSTS_AND_VIDEOS
+  access_type: PUBLIC
+  requires_login: true
+  verification_status: VERIFIED
+  name_verified: true
+  name_verification_method: USER_MANUAL_CONFIRMATION
+  submitted_on: '2026-10-09'
+  access_verified: true
+  access_verified_on: '2026-10-09'
+  access_verification_method: FACEBOOK_PUBLIC_ABOUT_AND_BROWSER_ITEM_PROBE
+  notes: User-submitted project source; verified public About UI and bounded browser
+    item probe. Anonymous access/full coverage not verified. Configured to use authenticated
+    browser profile; actual anonymous-login requirement remains untested.
+- source_id: fb_group_681283966885365
+  platform: facebook
+  source_type: FACEBOOK_GROUP
+  name: VIN WONDER VŨ YÊN
+  platform_group_ref: '681283966885365'
+  url: https://www.facebook.com/groups/681283966885365
+  project: null
+  location: null
+  priority: P1
+  enabled: true
+  monitoring_scope: RECENT_POSTS_AND_VIDEOS
+  access_type: PUBLIC
+  requires_login: true
+  verification_status: VERIFIED
+  name_verified: true
+  name_verification_method: USER_MANUAL_CONFIRMATION
+  submitted_on: '2026-10-09'
+  access_verified: true
+  access_verified_on: '2026-10-09'
+  access_verification_method: FACEBOOK_PUBLIC_ABOUT_AND_BROWSER_ITEM_PROBE
+  notes: User-submitted project source; verified public About UI and bounded browser
+    item probe. Anonymous access/full coverage not verified. Configured to use authenticated
+    browser profile; actual anonymous-login requirement remains untested.
+- source_id: fb_group_718379403948782
+  platform: facebook
+  source_type: FACEBOOK_GROUP
+  name: Review Vũ Yên Hải Phòng- Vé Công Viên Vinwonder Vũ Yên
+  platform_group_ref: '718379403948782'
+  url: https://www.facebook.com/groups/718379403948782
+  project: null
+  location: null
+  priority: P1
+  enabled: true
+  monitoring_scope: RECENT_POSTS_AND_VIDEOS
+  access_type: PUBLIC
+  requires_login: true
+  verification_status: VERIFIED
+  name_verified: true
+  name_verification_method: USER_MANUAL_CONFIRMATION
+  submitted_on: '2026-10-09'
+  access_verified: true
+  access_verified_on: '2026-10-09'
+  access_verification_method: FACEBOOK_PUBLIC_ABOUT_AND_BROWSER_ITEM_PROBE
+  notes: User-submitted project source; verified public About UI and bounded browser
+    item probe. Anonymous access/full coverage not verified. Configured to use authenticated
+    browser profile; actual anonymous-login requirement remains untested.

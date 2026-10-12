@@ -1,0 +1,2 @@
+# Channel name used by the built-in search/resolution flow.
+Reuters

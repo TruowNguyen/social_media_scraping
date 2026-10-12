@@ -1,0 +1,55 @@
+schema_version: project-issue-taxonomy-v1
+taxonomy_version: 1.0.0
+status: APPROVED
+runtime_enabled: true
+project_id: vincons
+name: VinCons - phạm vi nhiều công trường
+scope_type: ORGANIZATION_PORTFOLIO
+location: null
+registry_status: PROPOSED_NOT_ACTIVE
+common_catalog: common.yaml
+source_ids:
+- fb_group_139108668844789
+- fb_group_880263084346112
+- fb_group_2249052912495339
+- fb_group_669205626514948
+- fb_group_suanhathuduc
+- fb_group_144732306144575
+- fb_group_1675953926771851
+issue_priorities:
+  ACCESS_DENIED: P0
+  ACCESS_SYSTEM_FAILURE: P0
+  CHECKIN_BOTTLENECK: P0
+  ENTRY_QUEUE: P0
+  EXIT_QUEUE: P0
+  GATE_CONGESTION_UNSPECIFIED: P0
+  VEHICLE_CONGESTION: P0
+  WORKER_CONGESTION: P0
+  EXTERNAL_TRAFFIC_IMPACT: P0
+  SERVICE_DELAY: P1
+  NO_RESPONSE: P1
+  APP_SYSTEM_ISSUE: P1
+  STAFF_ATTITUDE: P1
+  UNRESOLVED_ISSUE: P1
+  OTHER_CUSTOMER_COMPLAINT: P1
+  OTHER_RELEVANT: P2
+not_enabled_issue_ids:
+- REFUND_DISPUTE
+attention_topics:
+- Phân biệt công trường cụ thể với tên doanh nghiệp VinCons; thiếu địa điểm phải giữ
+  null.
+- Thời điểm vào ca/tan ca, chiều di chuyển, loại người/xe chỉ trích khi có evidence.
+- Lỗi thẻ/QR/khuôn mặt/barrier, quy trình đăng ký và ngoại lệ ra vào.
+- Phản ánh nhân sự kiểm soát không tự là phản ánh khách hàng; lưu role UNKNOWN nếu
+  chưa rõ.
+- Nhà thầu/bộ phận/bên bị phản ánh chỉ ghi theo lời người viết, chưa là kết luận trách
+  nhiệm.
+scope_review_topics:
+- Tranh chấp lương, nợ lương, điều kiện lao động và chỗ ở không tự map CUSTOMER_COMPLAINT;
+  REVIEW/OTHER_RELEVANT chờ mentor duyệt phạm vi.
+- Sự cố an toàn có tín hiệu cụ thể giữ REVIEW/OTHER_RELEVANT, không loại theo từ khóa
+  vay nợ/tuyển dụng.
+- Tin hoàn tiền dịch vụ ngoài nhóm đã bật cần review, không DROP chỉ vì REFUND_DISPUTE
+  chưa bật.
+approval_source: User accepted taxonomy baseline and requested runtime classifier
+  integration on 2026-10-09; mentor/held-out quality acceptance remains pending

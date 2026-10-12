@@ -1,0 +1,33 @@
+schema_version: "watchlist-config-v1"
+
+watchlists:
+  - watchlist_id: "vincons_facebook_seed_v1"
+    name: "VinCons - Facebook groups do người dùng cung cấp"
+    status: "DRAFT"
+    enabled: false
+    source_ids:
+      - "fb_group_139108668844789"
+      - "fb_group_880263084346112"
+      - "fb_group_2249052912495339"
+      - "fb_group_669205626514948"
+      - "fb_group_suanhathuduc"
+      - "fb_group_144732306144575"
+      - "fb_group_1675953926771851"
+    query_set_ids:
+      - "vincons_ecosystem"
+    exclusion_set_id: "smartcity_noise_signals"
+    prefilter_rule_ids:
+      - "NO_SALES_RECRUITMENT_BUY_SELL_EXCHANGE"
+    domain_priorities:
+      SITE_ACCESS_CONGESTION: "P0"
+      CUSTOMER_COMPLAINT: "P1"
+    retrieval:
+      mode: "RECENT_SOURCE_ITEMS"
+      require_keyword_match: false
+      include_comments: false
+      content_types: ["POST", "VIDEO"]
+      # Manual acquisition pilot defaults; not a production SLA.
+      lookback_minutes: 10080
+      max_items_per_source: 100
+    schedule_profile: null
+    notes: "Draft source pool, not proof all groups relate to VinCons. Acquisition reads candidate captions/metadata and enforces the linked intent-exclusion rule before full fetch. Sources and watchlist remain disabled until explicit verification/enablement. Schedule and project/location aliases await confirmation."

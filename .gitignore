@@ -1,0 +1,90 @@
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python Cache
+__pycache__/
+*.pyc
+
+# Project Specifics (Data & Databases)
+reports/
+yt-transcripts/
+twtr-tweets/
+tel-transcripts/
+reddit-posts/
+tiktok-videos/
+truth-posts/
+x-tweet-fetcher/
+
+# Security & Credentials
+.env
+
+# Monitored keywords and source lists reveal what is being watched.
+/keywords/
+/sources/
+
+# Scraper logs (one directory, rotated 5MB x 3 per scraper).
+logs/
+
+# Telethon login sessions are live account credentials.
+*.session
+*.session-journal
+sessions/
+
+# Regenerable run artifacts.
+dedup/
+
+# The live registry is local config; the committed template is the example.
+assets-registry/asset-registry.json
+
+test.py
+
+# Runner artifacts (scheduled runs)
+.run-scrapers.lock
+logs/run-scrapers.log
+.env.bak.*
+
+# Private configuration and local agent tooling.
+.env.*
+!.env.example
+AGENTS.md
+CLAUDE.md
+.claudeignore
+.codex/
+.agents/
+graphify-out/
+
+# Documentation exports, downloads, and generated artifacts.
+*.pdf
+*.tex
+*.aux
+*.out
+*.log
+*.db
+*.db-wal
+*.db-shm
+*.bak*
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+# Python build artifacts
+build/
+dist/
+*.egg-info/
+config/.threads.lock
+
+# Local databases, document exports and design review artifacts.
+*.sqlite
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite3-journal
+*.docx
+*.xlsx
+.impeccable/
+/templaterp.md

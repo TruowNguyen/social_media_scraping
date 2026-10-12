@@ -1,0 +1,70 @@
+# Starter vocabulary from the PRD. This file is not read by the legacy text-list collectors.
+schema_version: "keyword-config-v1"
+
+query_sets:
+  - query_set_id: "vincons_ecosystem"
+    name: "VinCons - discovery và tín hiệu vận hành"
+    language: "vi"
+    entity:
+      canonical_name: "VinCons"
+      aliases: ["VinCons"]
+    # Do not assign sample PRD projects to the submitted groups without evidence.
+    projects: []
+    locations: []
+    discovery_terms: ["VinCons"]
+    hashtags: ["#VinCons"]
+    operational_signals:
+      SITE_ACCESS_CONGESTION:
+        access_context:
+          - "cổng công trường"
+          - "cổng"
+          - "ra vào"
+          - "checkin"
+          - "check-in"
+          - "check out"
+          - "check-out"
+          - "chấm công"
+          - "barrier"
+          - "barie"
+          - "QR"
+          - "thẻ ra vào"
+          - "nhận diện khuôn mặt"
+          - "face recognition"
+          - "xe tải"
+          - "xe ben"
+          - "công nhân"
+        problem_terms:
+          - "xếp hàng"
+          - "ùn"
+          - "ùn tắc"
+          - "tắc"
+          - "kẹt"
+          - "nối đuôi"
+          - "chờ"
+          - "chờ lâu"
+          - "đứng chờ"
+          - "đông"
+          - "chậm"
+          - "không vào được"
+          - "không ra được"
+          - "kẹt cứng"
+      CUSTOMER_COMPLAINT:
+        problem_terms:
+          - "phản ánh"
+          - "khiếu nại"
+          - "bức xúc"
+          - "không hài lòng"
+          - "xử lý chậm"
+          - "không phản hồi"
+          - "không hỗ trợ"
+          - "chưa xử lý"
+          - "chờ lâu"
+          - "phản ánh nhiều lần"
+          - "lỗi app"
+          - "lỗi hệ thống"
+    matching_policy:
+      preserve_original_text: true
+      case_sensitive: false
+      accent_insensitive_signals: true
+      operational_keyword_alone_proves_relevance: false
+      project_location_require_evidence: true

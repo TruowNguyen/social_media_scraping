@@ -1,0 +1,247 @@
+{
+  "date": "2026-10-08",
+  "runtime": "3.13.13",
+  "status": "OFFLINE_VERIFIED",
+  "live_requests": 0,
+  "model_downloads": 0,
+  "formal_acp": false,
+  "checks": {
+    "unittest": {
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "cases": 31
+    },
+    "legacy_schema": {
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "selfcheck_schema.py"
+      ],
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    "legacy_x_retry": {
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "selfcheck_twtr_retry.py"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "cases": 8
+    },
+    "demo": {
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "-X",
+        "utf8",
+        "demo.py"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "baseline_equal": true,
+      "canonical_sha256": "bd6f88176669c0468419d5782542fe97776fd9be0649bf99df3294ff08002c53",
+      "synthetic_records": 3
+    },
+    "dispatcher_help": {
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "-m",
+        "engine.runtime",
+        "--help"
+      ],
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    "installed_cli_help": {
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\social-scrape.exe",
+        "--help"
+      ],
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    "compile": {
+      "status": "PASS",
+      "files": 72
+    },
+    "fresh_import_youtube": {
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "-c",
+        "import importlib,sys\nfrom src.analysis import legacy_text as analysis\nfrom src.media import transcription as media\nm=importlib.import_module(\"src.collectors.youtube.collector\")\nimportlib.import_module(\"engine.legacy.youtube\")\nassert not hasattr(m,\"main\")\nassert media._whisper_model is None\nassert not analysis._SENTIMENT_BUNDLES and analysis._ASSET_NLI_BUNDLE is None\nassert \"transformers\" not in sys.modules and \"faster_whisper\" not in sys.modules\n"
+      ],
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    "fresh_import_x": {
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "-c",
+        "import importlib,sys\nfrom src.analysis import legacy_text as analysis\nfrom src.media import transcription as media\nm=importlib.import_module(\"src.collectors.x.collector\")\nimportlib.import_module(\"engine.legacy.x\")\nassert not hasattr(m,\"main\")\nassert media._whisper_model is None\nassert not analysis._SENTIMENT_BUNDLES and analysis._ASSET_NLI_BUNDLE is None\nassert \"transformers\" not in sys.modules and \"faster_whisper\" not in sys.modules\n"
+      ],
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    "fresh_import_telegram": {
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "-c",
+        "import importlib,sys\nfrom src.analysis import legacy_text as analysis\nfrom src.media import transcription as media\nm=importlib.import_module(\"src.collectors.telegram.collector\")\nimportlib.import_module(\"engine.legacy.telegram\")\nassert not hasattr(m,\"main\")\nassert media._whisper_model is None\nassert not analysis._SENTIMENT_BUNDLES and analysis._ASSET_NLI_BUNDLE is None\nassert \"transformers\" not in sys.modules and \"faster_whisper\" not in sys.modules\n"
+      ],
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    "fresh_import_reddit": {
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "-c",
+        "import importlib,sys\nfrom src.analysis import legacy_text as analysis\nfrom src.media import transcription as media\nm=importlib.import_module(\"src.collectors.reddit.collector\")\nimportlib.import_module(\"engine.legacy.reddit\")\nassert not hasattr(m,\"main\")\nassert media._whisper_model is None\nassert not analysis._SENTIMENT_BUNDLES and analysis._ASSET_NLI_BUNDLE is None\nassert \"transformers\" not in sys.modules and \"faster_whisper\" not in sys.modules\n"
+      ],
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    "fresh_import_tiktok": {
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "-c",
+        "import importlib,sys\nfrom src.analysis import legacy_text as analysis\nfrom src.media import transcription as media\nm=importlib.import_module(\"src.collectors.tiktok.collector\")\nimportlib.import_module(\"engine.legacy.tiktok\")\nassert not hasattr(m,\"main\")\nassert media._whisper_model is None\nassert not analysis._SENTIMENT_BUNDLES and analysis._ASSET_NLI_BUNDLE is None\nassert \"transformers\" not in sys.modules and \"faster_whisper\" not in sys.modules\n"
+      ],
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    "fresh_import_truthsocial": {
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "-c",
+        "import importlib,sys\nfrom src.analysis import legacy_text as analysis\nfrom src.media import transcription as media\nm=importlib.import_module(\"src.collectors.truthsocial.collector\")\nimportlib.import_module(\"engine.legacy.truthsocial\")\nassert not hasattr(m,\"main\")\nassert media._whisper_model is None\nassert not analysis._SENTIMENT_BUNDLES and analysis._ASSET_NLI_BUNDLE is None\nassert \"transformers\" not in sys.modules and \"faster_whisper\" not in sys.modules\n"
+      ],
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    "bash_syntax": {
+      "command": [
+        "C:/Program Files/Git/bin/bash.exe",
+        "-n",
+        "run-scrapers.sh"
+      ],
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    "browser_smoke_facebook": {
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "-m",
+        "engine.browser_session",
+        "--platform",
+        "facebook",
+        "--smoke"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "result": {
+        "platform": "facebook",
+        "chromium": "153.0.8010.12",
+        "outcome": "LOCAL_SMOKE_PASSED",
+        "platform_access_verified": false
+      }
+    },
+    "browser_smoke_tiktok": {
+      "command": [
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "-m",
+        "engine.browser_session",
+        "--platform",
+        "tiktok",
+        "--smoke"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "result": {
+        "platform": "tiktok",
+        "chromium": "153.0.8010.12",
+        "outcome": "LOCAL_SMOKE_PASSED",
+        "platform_access_verified": false
+      }
+    },
+    "wheel_build": {
+      "command": [
+        "C:/Users/asus/AppData/Local/Programs/Python/Python311/Scripts/uv.exe",
+        "build",
+        "--wheel",
+        "--python",
+        "D:\\task\\social_listening\\social_media_scraping\\.venv\\audit\\Scripts\\python.exe",
+        "--out-dir",
+        ".venv/refactor/dist",
+        "--cache-dir",
+        ".venv/uv-cache"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "entries": 58,
+      "test_data_profiles_excluded": true
+    },
+    "ast_parity": {
+      "status": "PASS",
+      "shared_definitions": 54,
+      "unchanged_collector_definitions": 88,
+      "equivalent_runtime_definitions": 8,
+      "dedup_bytes_equal": true,
+      "intentional_delta": "setup_logging additionally registers owner module logger names"
+    },
+    "prd_snapshot": {
+      "status": "PASS",
+      "sha256": "92a23ae94549cd4b94c7d5b2b215121a3e760ed7c03f4c0285fb539e4219efb7"
+    },
+    "fr_matrix": {
+      "status": "PASS",
+      "functional_requirements": 17
+    },
+    "documentation": {
+      "status": "PASS",
+      "files": 21,
+      "local_links": 195,
+      "json_examples": 2
+    },
+    "yaml_documentation": {
+      "command": [
+        "C:/Python314/python.exe",
+        "-c",
+        "from pathlib import Path\nimport yaml,re,json\nconfigs=list(Path(\"config\").glob(\"*.yaml\"))\nfor p in configs: yaml.safe_load(p.read_text(encoding=\"utf-8\"))\nsamples=0\nfor p in Path(\"specs\").rglob(\"*.md\"):\n for code in re.findall(r\"```yaml\\s*\\n(.*?)\\n```\",p.read_text(encoding=\"utf-8\"),re.S):\n  yaml.safe_load(code); samples+=1\nprint(json.dumps({\"configs\":len(configs),\"yaml_examples\":samples}))\n"
+      ],
+      "exit_code": 0,
+      "status": "PASS",
+      "result": {
+        "configs": 4,
+        "yaml_examples": 3
+      }
+    },
+    "baseline_dependency_pins": {
+      "status": "PASS",
+      "distributions": 25
+    }
+  },
+  "browser_resources": {
+    "playwright": "1.63.0",
+    "chromium": "153.0.8010.12",
+    "connected_browser_discovery": [],
+    "platform_access_verified": false,
+    "manual_login_verified": false
+  },
+  "serpapi_key_present": false,
+  "remaining": [
+    "Manual browser session and public-source access verification",
+    "SerpApi credential/live pilot",
+    "CORE runtime and new acquisition adapters",
+    "SmartCity media/LLM/Excel/scheduler",
+    "Remote CI matrix and formal ACP reviewer"
+  ],
+  "completed_at": "2026-10-08T07:28:23.078851+00:00"
+}

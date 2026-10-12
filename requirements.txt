@@ -1,0 +1,16 @@
+# Collection dependencies. Python 3.12 or 3.13.
+-r requirements-core.txt
+
+# YouTube and TikTok metadata/captions.
+youtube-transcript-api==1.2.4
+yt-dlp==2026.8.19
+
+# X discovery and fetch backends. Upstream is not published on PyPI.
+ddgs==9.16.0
+x-tweet-fetcher @ git+https://github.com/ythx-101/x-tweet-fetcher.git@2cbabb2257dc10fc9a4872d16849859763073ad2
+
+# Telegram and Reddit. Truth Social uses the standard library.
+telethon>=1.36,<2
+praw>=7.7,<8
+
+# Optional local NLP/transcription: pip install -r requirements-models.txt

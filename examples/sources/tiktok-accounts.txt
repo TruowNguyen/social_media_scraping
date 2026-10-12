@@ -1,0 +1,2 @@
+# Add verified TikTok usernames, one per line.
+# Do not leave this file empty before running TikTok.

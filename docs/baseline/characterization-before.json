@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-08",
+  "phase": "before_refactor",
+  "tests": 13,
+  "passed": 13,
+  "command": "python -m unittest tests.characterization.test_collectors -v",
+  "suite_sha256": "9178221e045d80d8b4c982586fd3ddbd625020e0acf04223dfa4a50c2115597a",
+  "live_requests": 0,
+  "model_downloads": 0,
+  "note": "Windows TemporaryDirectory required execution outside sandbox; original assertions passed.",
+  "supplemental_frozen_original": {
+    "tests": 10,
+    "passed": 10,
+    "command": "CHARACTERIZE_ORIGINAL_ROOT=<frozen-original>; Python audit -X utf8 -m unittest tests.characterization.test_resilience -v",
+    "suite_sha256": "24fb33b8facb313ed1be16cdd9655db78a521dbf6132e9d5c2ee70aed79beb21",
+    "note": "Supplemental cases run against preserved original source/shared modules after migration; original definitions unchanged."
+  }
+}

@@ -1,0 +1,44 @@
+schema_version: project-registry-v1
+projects:
+- project_id: vincons
+  name: VinCons (phạm vi tổ chức)
+  scope_type: ORGANIZATION_PORTFOLIO
+  enabled: true
+  location: null
+  aliases: [VinCons, Vin Cons]
+  hashtags: ['#VinCons']
+  discovery_terms: [VinCons]
+  source_ids:
+  - fb_group_139108668844789
+  - fb_group_880263084346112
+  - fb_group_2249052912495339
+  - fb_group_669205626514948
+  - fb_group_suanhathuduc
+  - fb_group_144732306144575
+  - fb_group_1675953926771851
+  notes: Phạm vi tổ chức, không tự suy ra tên công trường hoặc vị trí dự án.
+- project_id: vinwonders_vu_yen
+  name: VinWonders Vũ Yên
+  enabled: true
+  location: Hải Phòng
+  aliases:
+  - VinWonders Vũ Yên
+  - VinWonder Vũ Yên
+  - Vin Wonders Vũ Yên
+  - Vin Wonder Vũ Yên
+  hashtags:
+  - '#VinWondersVuYen'
+  - '#VinWonderVuYen'
+  discovery_terms:
+  - VinWonders Vũ Yên
+  - VinWonder Vũ Yên
+  source_ids:
+  - fb_group_vinwondersroyalparkhaiphong
+  - fb_group_reviewhaiphong.vinwondersvuyen
+  - fb_group_1280258833374137
+  - fb_group_1463368281672061
+  - fb_group_1500004461400003
+  - fb_group_681283966885365
+  - fb_group_718379403948782
+  reference_url: https://vinwonders.com/en/wonderpedia/news/vinwonders-vu-yen-hai-phong/
+  notes: Không dùng Vũ Yên hoặc Royal Island riêng lẻ làm alias của công viên.

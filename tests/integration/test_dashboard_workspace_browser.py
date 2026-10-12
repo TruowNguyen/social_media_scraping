@@ -1,0 +1,230 @@
+"""Real Chromium, isolated raw SQLite and fake provider. No live acquisition."""
+import os
+import tempfile
+import threading
+import unittest
+from pathlib import Path
+from http.server import ThreadingHTTPServer
+from unittest.mock import patch
+from engine.dashboard import make_handler,SearchService
+from src.browser.profiles import prepare_browser_path
+from tests.contract.test_dashboard_workspace import fixture
+
+ROOT=Path(__file__).resolve().parents[2]
+
+
+@unittest.skipUnless(os.environ.get('ACQUISITION_BROWSER_TESTS')=='1','Opt-in Chromium')
+class WorkspaceBrowserTests(unittest.TestCase):
+    def test_platform_sources_multi_project_schedule_and_saved_state(self):
+        import shutil
+        from playwright.sync_api import sync_playwright,expect
+        from engine.threads_registry import ThreadsRegistry
+        from src.acquisition.threads import node_from_item
+        from src.storage.conversations import ConversationStore
+        prepare_browser_path()
+        with tempfile.TemporaryDirectory() as folder:
+            db=Path(folder)/'db.sqlite3';fixture(db,3)
+            config=Path(folder)/'config';shutil.copytree(ROOT/'config',config)
+            registry=ThreadsRegistry(config);data=registry.data
+            data.update(enabled=True,verification={'search_recent':'SUPPORTED','public_replies':'SUPPORTED'})
+            registry.write(data,data['version'])
+            raw=ConversationStore(db)
+            node=node_from_item({'url':'https://www.threads.com/@tester/post/ui_test','shortcode':'ui_test','username':'tester','text':'Chờ ở cổng VinWonders','timestamp':'2026-10-01T01:00:00Z'})
+            raw.ingest(node,'threads_vwy_name','fixture');raw.close()
+            service=SearchService(db,config,enable_scheduler=False)
+            server=ThreadingHTTPServer(('127.0.0.1',0),make_handler(db,config,service=service))
+            thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+            try:
+                with patch('engine.classification_service.GeminiGateway') as gateway,patch('engine.dashboard.AcquisitionEngine') as acquisition:
+                    with sync_playwright() as p:
+                        browser=p.chromium.launch(headless=True);page=browser.new_page(viewport={'width':1440,'height':1000});errors=[]
+                        page.on('pageerror',lambda e:errors.append(str(e)))
+                        page.goto(f'http://127.0.0.1:{server.server_port}/?tab=LIBRARY&platform=threads')
+                        expect(page.locator('#health-strip')).to_contain_text('Lịch Threads:')
+                        expect(page.locator('#applied-scope')).to_contain_text('1 nội dung')
+                        expect(page.locator('#filter-source')).to_contain_text('Threads · VinCons')
+                        page.locator('#saved-rows [data-open]').first.click()
+                        expect(page.locator('.detail-source')).to_contain_text('Threads')
+                        expect(page.locator('.detail-source')).to_contain_text('VinWonders Vũ Yên')
+                        page.keyboard.press('Escape');page.locator('#tab-CRAWL').click()
+                        page.locator('#crawl-platform').select_option('THREADS')
+                        expect(page.locator('#threads-start-run')).to_be_enabled()
+                        page.locator('#threads-project').select_option('vincons')
+                        expect(page.locator('#threads-queries')).to_contain_text('VinCons')
+                        page.locator('[data-section=schedule]').click()
+                        page.locator('#threads-schedule-projects input[value=vincons]').check()
+                        page.locator('#threads-schedule-form button[type=submit]').click()
+                        expect(page.locator('#notice')).to_contain_text('Đã lưu cấu hình lịch')
+                        saved=service.threads.schedule_status()
+                        self.assertEqual(set(saved['project_ids']),{'vincons','vinwonders_vu_yen'});self.assertFalse(saved['enabled'])
+                        page.reload();expect(page.locator('#crawl-platform')).to_have_value('THREADS')
+                        expect(page.locator('#threads-project')).to_have_value('vincons')
+                        page.locator('[data-section=sources]').click()
+                        expect(page.locator('#threads-project-coverage')).to_contain_text('1 nội dung đã lưu')
+                        expect(page.locator('#threads-project-coverage')).to_contain_text('Chưa chạy')
+                        # Empty project selection fails locally and preserves the stored schedule.
+                        page.locator('[data-section=schedule]').click()
+                        for checkbox in page.locator('#threads-schedule-projects input').all():checkbox.uncheck()
+                        page.locator('#threads-schedule-form button[type=submit]').click()
+                        expect(page.locator('#notice')).to_contain_text('Chọn ít nhất một dự án')
+                        self.assertEqual(service.threads.schedule_status()['version'],saved['version'])
+                        page.reload();page.set_viewport_size({'width':390,'height':844})
+                        for section in ('manual','schedule','sources','history'):
+                            page.locator(f'[data-section={section}]').click()
+                            expect(page.locator('#threads-'+section)).to_be_visible()
+                            self.assertLessEqual(page.evaluate('document.documentElement.scrollWidth'),390)
+                        # Navigation while initial health is unresolved must not
+                        # let the old restore overwrite the newly selected filter.
+                        from engine.dashboard_workspace import Workspace
+                        entered=threading.Event();release=threading.Event();original=Workspace.health
+                        def delayed_health(workspace):
+                            entered.set();release.wait(10);return original(workspace)
+                        page.set_viewport_size({'width':1440,'height':1000})
+                        with patch.object(Workspace,'health',delayed_health):
+                            try:
+                                page.goto(f'http://127.0.0.1:{server.server_port}/?tab=CRAWL')
+                                self.assertTrue(entered.wait(2))
+                                page.locator('#tab-LIBRARY').click()
+                                expect(page.locator('#filter-platform')).to_be_enabled(timeout=2000)
+                                page.locator('#filter-platform').select_option('threads')
+                                release.set()
+                                page.locator('#filter-form button[type=submit]').click()
+                                expect(page.locator('#applied-scope')).to_contain_text('1 nội dung',timeout=12000)
+                                self.assertIn('platform=threads',page.url)
+                            finally:release.set()
+                        self.assertEqual(errors,[]);gateway.assert_not_called();acquisition.assert_not_called()
+                        browser.close()
+            finally:server.shutdown();server.server_close();service.close();thread.join()
+
+    def test_clear_filters_refreshes_without_apply_and_keeps_drafts(self):
+        from playwright.sync_api import sync_playwright, expect
+        prepare_browser_path()
+        with tempfile.TemporaryDirectory() as folder:
+            db = Path(folder) / 'db.sqlite3'
+            fixture(db, 35)
+            service = SearchService(db, ROOT / 'config', enable_scheduler=False)
+            server = ThreadingHTTPServer(('127.0.0.1', 0), make_handler(db, ROOT / 'config', service=service))
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                with patch('engine.classification_service.GeminiGateway') as gateway, patch('engine.dashboard.AcquisitionEngine') as acquisition:
+                    with sync_playwright() as p:
+                        browser = p.chromium.launch(headless=True)
+                        errors = []
+                        for tab, width in [('CLASSIFY', 1440), ('LIBRARY', 390)]:
+                            with self.subTest(tab=tab):
+                                page = browser.new_page(viewport={'width': width, 'height': 1000})
+                                page.on('pageerror', lambda e: errors.append(str(e)))
+                                page.goto(f'http://127.0.0.1:{server.server_port}/?tab={tab}&keyword=no_matching_text&page=2')
+                                expect(page.locator('#applied-scope')).to_contain_text('0 nội dung')
+                                expect(page.locator('#clear-filters')).to_be_enabled()
+                                if width < 760:
+                                    page.locator('#filter-toggle').click()
+                                page.evaluate("localStorage.setItem('social-listening-review-drafts-v1', JSON.stringify({test:{note:'keep draft',status:'RELEVANT',updated:Date.now()}}))")
+                                previous = page.evaluate('state.view.view_id')
+                                page.locator('#clear-filters').click()
+                                expect(page.locator('#applied-scope')).to_contain_text('35 nội dung', timeout=6000)
+                                expect(page.locator('#notice')).to_contain_text('Đã xóa bộ lọc')
+                                expect(page.locator('#filter-keyword')).to_have_value('')
+                                expect(page.locator('#editing-state')).to_have_text('')
+                                self.assertNotIn('keyword=', page.url)
+                                self.assertEqual(page.evaluate('state.view.page'), 1)
+                                self.assertNotEqual(page.evaluate('state.view.view_id'), previous)
+                                self.assertEqual(page.evaluate("JSON.parse(localStorage.getItem('social-listening-review-drafts-v1')).test.note"), 'keep draft')
+                                # A failed read must preserve the old table and report the failure.
+                                page.locator('#filter-keyword').fill('no_matching_text')
+                                page.locator('#filter-form button[type=submit]').click()
+                                expect(page.locator('#applied-scope')).to_contain_text('0 nội dung')
+                                page.route('**/api/views?*', lambda route: route.fulfill(status=500, content_type='application/json', body='{"error":"Read failed"}'))
+                                page.locator('#clear-filters').click()
+                                expect(page.locator('#notice')).to_contain_text('Chưa tải được bảng sau khi xóa bộ lọc')
+                                expect(page.locator('#notice')).to_have_class('error')
+                                expect(page.locator('#applied-scope')).to_contain_text('0 nội dung')
+                                expect(page.locator('#saved-panel')).to_have_attribute('aria-busy', 'false')
+                                page.unroute('**/api/views?*')
+                                page.locator('#clear-filters').click()
+                                expect(page.locator('#applied-scope')).to_contain_text('35 nội dung')
+                                page.reload()
+                                expect(page.locator('#applied-scope')).to_contain_text('35 nội dung')
+                                page.close()
+                        self.assertEqual(errors, [])
+                        gateway.assert_not_called()
+                        acquisition.assert_not_called()
+                        browser.close()
+            finally:
+                server.shutdown()
+                server.server_close()
+                service.close()
+                thread.join()
+
+    def test_drafts_context_conflict_snapshot_export_and_mobile(self):
+        from playwright.sync_api import sync_playwright,expect
+        prepare_browser_path()
+        with tempfile.TemporaryDirectory() as folder:
+            db=Path(folder)/'db.sqlite3';ids=fixture(db,35)
+            service=SearchService(db,ROOT/'config',enable_scheduler=False)
+            server=ThreadingHTTPServer(('127.0.0.1',0),make_handler(db,ROOT/'config',service=service))
+            thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+            try:
+                with patch('engine.classification_service.GeminiGateway') as gateway,patch('engine.dashboard.AcquisitionEngine') as acquisition:
+                    with sync_playwright() as p:
+                        browser=p.chromium.launch(headless=True);page=browser.new_page(viewport={'width':1440,'height':1000});page.set_default_timeout(10000)
+                        errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
+                        base=f'http://127.0.0.1:{server.server_port}';page.goto(base)
+                        expect(page.locator('#tab-CLASSIFY')).to_have_attribute('aria-selected','true')
+                        expect(page.locator('#saved-rows tr')).to_have_count(25)
+                        expect(page.locator('#applied-scope')).to_contain_text('35 nội dung')
+                        page.locator('#next-page').click();expect(page.locator('#saved-rows tr')).to_have_count(10)
+                        page.goto(base+'?tab=LIBRARY&node='+ids[1])
+                        expect(page.locator('#detail-dialog')).to_be_visible()
+                        expect(page.locator('#detail-body')).to_contain_text('Bài gốc về cổng dự án')
+                        page.locator('#review-note').fill('Ghi chú nháp cần giữ')
+                        page.locator('#detail-close').click();page.locator('#filter-keyword').fill('không có kết quả')
+                        page.locator('#filter-form button[type=submit]').click()
+                        expect(page.locator('#applied-scope')).to_contain_text('0 nội dung')
+                        page.reload();expect(page.locator('#draft-count')).to_contain_text('1 bản nháp')
+                        page.locator('#clear-filters').click();page.locator('#filter-form button[type=submit]').click()
+                        expect(page.locator('#applied-scope')).to_contain_text('35 nội dung')
+                        page.locator('#drafts-open').click();page.locator(f'[data-draft-open="{ids[1]}"]').click();expect(page.locator('#review-note')).to_have_value('Ghi chú nháp cần giữ')
+                        page.locator('#thread-details summary').click();page.locator('#thread-more').click();expect(page.locator('#thread-items .context-item')).to_have_count(25)
+                        # Poll tick must retain the open detail and focused editor.
+                        page.locator('#review-note').focus();page.evaluate('async()=>{for(let i=0;i<3;i++){await refreshHealth();await checkNewData();}}')
+                        expect(page.locator('#review-note')).to_be_focused();expect(page.locator('#review-note')).to_have_value('Ghi chú nháp cần giữ')
+                        page.route('**/api/reviews',lambda route:route.fulfill(status=500,content_type='application/json',body='{"error":"Lỗi lưu thử nghiệm"}'))
+                        page.locator('#review-save').click();expect(page.locator('#review-state')).to_contain_text('Lỗi lưu thử nghiệm')
+                        expect(page.locator('#review-note')).to_have_value('Ghi chú nháp cần giữ');page.unroute('**/api/reviews')
+                        from src.storage.conversations import ConversationStore
+                        raw=ConversationStore(db,initialize=False);raw.review(ids[1],'IRRELEVANT','Đánh giá từ phiên khác');raw.close()
+                        page.locator('#review-save').click();expect(page.locator('#review-conflict')).to_be_visible()
+                        expect(page.locator('#review-note')).to_have_value('Ghi chú nháp cần giữ')
+                        page.locator('#rebase-draft').click();page.locator('#review-save').click()
+                        expect(page.locator('#review-state')).to_contain_text('Đã lưu')
+                        page.locator('#detail-close').click();page.locator('#refresh-view').click();page.locator('#page-size').select_option('100')
+                        expect(page.locator('#saved-rows')).to_contain_text('Ghi chú nháp cần giữ')
+                        snapshot=page.evaluate('state.view.view_id')
+                        page.locator('#filter-keyword').fill('Thay đổi chưa áp dụng')
+                        with page.expect_download() as download:page.locator('#export-view').click()
+                        self.assertTrue(download.value.suggested_filename.endswith('.xlsx'))
+                        self.assertIn(snapshot,page.evaluate('state.view.view_id'))
+                        self.assertNotIn('Ghi chú nháp',page.url)
+                        page.locator('#filter-start').fill('2026-10-11');page.locator('#filter-end').fill('2026-10-09')
+                        page.locator('#filter-form button[type=submit]').click();expect(page.locator('#filter-end')).to_have_attribute('aria-invalid','true')
+                        page.locator('#clear-filters').click();page.locator('#filter-form button[type=submit]').click()
+                        expect(page.locator('#export-view')).to_be_enabled();page.evaluate('window.scrollTo(0,0)')
+                        (ROOT/'reports').mkdir(exist_ok=True);page.screenshot(path=str(ROOT/'reports/workspace-desktop.png'))
+                        page.set_viewport_size({'width':390,'height':844})
+                        expect(page.locator('#mobile-list')).to_be_visible();expect(page.locator('#table-wrap')).not_to_be_visible()
+                        self.assertLessEqual(page.evaluate('document.documentElement.scrollWidth'),390)
+                        page.screenshot(path=str(ROOT/'reports/workspace-mobile.png'))
+                        page.locator('#mobile-list [data-open]').first.click();expect(page.locator('#detail-dialog')).to_be_visible()
+                        page.screenshot(path=str(ROOT/'reports/workspace-detail-mobile.png'));page.keyboard.press('Escape');expect(page.locator('#detail-dialog')).not_to_be_visible()
+                        page.locator('#tab-CRAWL').click();page.locator('[data-section=schedule]').click()
+                        expect(page.locator('#schedule-preview')).to_contain_text('05:00 → 05:45 → 06:30 → 07:15 → 08:00 → 08:30')
+                        expect(page.locator('#schedule-preview')).to_contain_text('17:00 → 17:45 → 18:30')
+                        raw=ConversationStore(db,initialize=False);raw.db.execute("UPDATE dashboard_views SET expires_at='2000-01-01T00:00:00Z' WHERE view_id=?",(snapshot,));raw.db.commit();raw.close()
+                        page.goto(base+'?tab=LIBRARY&view_id='+snapshot+'&project_id=vincons&date_basis=observed_any')
+                        expect(page.locator('#notice')).to_contain_text('hết hạn');expect(page.locator('#filter-project')).to_have_value('vincons');expect(page.locator('#export-view')).to_be_disabled()
+                        # Explicit refresh keeps URL filters; it never silently exports a new unfiltered set.
+                        page.locator('#refresh-view').click();expect(page.locator('#export-view')).to_be_enabled();expect(page.locator('#filter-project')).to_have_value('vincons')
+                        self.assertEqual(errors,[]);gateway.assert_not_called();acquisition.assert_not_called();browser.close()
+            finally:server.shutdown();server.server_close();service.close();thread.join()

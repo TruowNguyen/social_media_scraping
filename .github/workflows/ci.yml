@@ -1,0 +1,40 @@
+name: Offline checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - name: Install collection dependencies
+        run: python -m pip install -r requirements.txt -r requirements-acquisition.txt
+      - name: Compile first-party Python
+        run: python -m compileall -q src engine tests
+      - name: Characterization and architecture checks
+        run: python -m unittest discover -s tests -v
+      - name: Verify manual dispatcher
+        run: python -m engine.runtime --help
+      - name: Validate acquisition configs and CLI offline
+        run: python -m engine.acquisition_cli validate
+      - name: Check shell syntax
+        run: bash -n run-scrapers.sh
+      - name: Validate shared schema and configuration
+        run: python -m tests.contract.legacy_schema
+      - name: Validate X retry behavior
+        run: python -m tests.integration.legacy_x_retry
+      - name: Run synthetic pipeline demo
+        run: python -m engine.legacy.demo > /tmp/social-scraping-demo.json

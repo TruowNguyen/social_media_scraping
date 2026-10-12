@@ -1,0 +1,193 @@
+[
+  {
+    "record_id": "X_demo_news_1800000000000000000",
+    "Source": {
+      "platform": "X",
+      "Source_type": "Social_media",
+      "Source_name": "Synthetic Demo",
+      "Source_id": "1800000000000000000",
+      "url": "https://x.com/demo_news/status/1800000000000000000",
+      "author_name": "Synthetic Demo",
+      "author_id": "demo_news"
+    },
+    "Content": {
+      "Content_type": "tweet",
+      "title": "N/A",
+      "raw_text": "Oil prices rose as traders reviewed the latest supply report.",
+      "Clean_text": "",
+      "language": "en"
+    },
+    "time_stamps": {
+      "published_at": "2026-01-01 10:00:00 UTC",
+      "collected_at": "2026-01-01 11:00:00 UTC",
+      "updated_at": null
+    },
+    "asset_mention": [
+      {
+        "mentioned_text": "Oil prices",
+        "canonical_name": "Crude Oil",
+        "Symbol": "OIL",
+        "asset_class": "commodity",
+        "asset_id": "commodity:OIL",
+        "confidence": null
+      }
+    ],
+    "sentiment": {
+      "label": null,
+      "confidence": null
+    },
+    "Engagement": {
+      "Views": 0,
+      "likes": 0,
+      "Comments": 0,
+      "shares": 0
+    },
+    "media": {
+      "has_media": false,
+      "media_type": null,
+      "media_url": null
+    },
+    "deduplication": {
+      "content_hash": "86274d0c0b7c10317fa8457d9f2fa2b2",
+      "is_duplicate": false,
+      "duplicate_group_id": "X_demo_news_1800000000000000000",
+      "original_record_id": null
+    },
+    "quality": {
+      "is_complete": true,
+      "missing_fields": [],
+      "extraction_errors": [],
+      "quality_score": 100
+    }
+  },
+  {
+    "record_id": "Telegram_demo_news_1",
+    "Source": {
+      "platform": "Telegram",
+      "Source_type": "Social_media",
+      "Source_name": "Synthetic Demo",
+      "Source_id": "1",
+      "url": "https://t.me/demo_news/1",
+      "author_name": "Synthetic Demo",
+      "author_id": "demo_news"
+    },
+    "Content": {
+      "Content_type": "message",
+      "title": "N/A",
+      "raw_text": "Oil prices rose as traders reviewed the latest supply report.",
+      "Clean_text": "",
+      "language": "en"
+    },
+    "time_stamps": {
+      "published_at": "2026-01-01 10:00:00 UTC",
+      "collected_at": "2026-01-01 11:00:00 UTC",
+      "updated_at": null
+    },
+    "asset_mention": [
+      {
+        "mentioned_text": "Oil prices",
+        "canonical_name": "Crude Oil",
+        "Symbol": "OIL",
+        "asset_class": "commodity",
+        "asset_id": "commodity:OIL",
+        "confidence": null
+      }
+    ],
+    "sentiment": {
+      "label": null,
+      "confidence": null
+    },
+    "Engagement": {
+      "Views": 0,
+      "likes": 0,
+      "Comments": 0,
+      "shares": 0
+    },
+    "media": {
+      "has_media": false,
+      "media_type": null,
+      "media_url": null
+    },
+    "deduplication": {
+      "content_hash": "86274d0c0b7c10317fa8457d9f2fa2b2",
+      "is_duplicate": true,
+      "duplicate_group_id": "X_demo_news_1800000000000000000",
+      "original_record_id": "X_demo_news_1800000000000000000"
+    },
+    "quality": {
+      "is_complete": true,
+      "missing_fields": [],
+      "extraction_errors": [],
+      "quality_score": 100
+    }
+  },
+  {
+    "record_id": "Telegram_demo_news_2",
+    "Source": {
+      "platform": "Telegram",
+      "Source_type": "Social_media",
+      "Source_name": "Synthetic Demo",
+      "Source_id": "2",
+      "url": "https://t.me/demo_news/2",
+      "author_name": "Synthetic Demo",
+      "author_id": "demo_news"
+    },
+    "Content": {
+      "Content_type": "message",
+      "title": "N/A",
+      "raw_text": "قیمت تتر امروز بالا رفت و USDT گران شد. طلا هم رشد کرد.",
+      "Clean_text": "",
+      "language": "fa"
+    },
+    "time_stamps": {
+      "published_at": "2026-01-01 10:00:00 UTC",
+      "collected_at": "2026-01-01 11:00:00 UTC",
+      "updated_at": null
+    },
+    "asset_mention": [
+      {
+        "mentioned_text": "USDT",
+        "canonical_name": "Tether",
+        "Symbol": "USDT",
+        "asset_class": "cryptocurrency",
+        "asset_id": "crypto:USDT",
+        "confidence": null
+      },
+      {
+        "mentioned_text": "طلا",
+        "canonical_name": "Gold",
+        "Symbol": "XAU",
+        "asset_class": "commodity",
+        "asset_id": "commodity:XAU",
+        "confidence": null
+      }
+    ],
+    "sentiment": {
+      "label": null,
+      "confidence": null
+    },
+    "Engagement": {
+      "Views": 0,
+      "likes": 0,
+      "Comments": 0,
+      "shares": 0
+    },
+    "media": {
+      "has_media": false,
+      "media_type": null,
+      "media_url": null
+    },
+    "deduplication": {
+      "content_hash": "64cde2eafc775adb6361c0afeb724379",
+      "is_duplicate": false,
+      "duplicate_group_id": "Telegram_demo_news_2",
+      "original_record_id": null
+    },
+    "quality": {
+      "is_complete": true,
+      "missing_fields": [],
+      "extraction_errors": [],
+      "quality_score": 100
+    }
+  }
+]

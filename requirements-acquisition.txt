@@ -1,0 +1,4 @@
+# Additive SmartCity acquisition tier; no model/ASR dependency.
+-r requirements-core.txt
+-r requirements-browser.txt
+requests==2.34.2

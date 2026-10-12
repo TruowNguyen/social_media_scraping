@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "social-media-scraping"
+version = "0.1.0"
+description = "Social collection components and legacy runtime entry points"
+requires-python = ">=3.12"
+dynamic = ["dependencies"]
+
+[project.scripts]
+social-scrape = "engine.runtime:main"
+social-acquire = "engine.acquisition_cli:main"
+
+[project.optional-dependencies]
+acquisition = ["playwright==1.63.0", "requests==2.34.2", "yt-dlp==2026.8.19"]
+
+[tool.setuptools]
+py-modules = []
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src", "src.*", "engine", "engine.*"]
+exclude = ["tests", "tests.*"]
+namespaces = false
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements-core.txt"]}
+
+[tool.setuptools.package-data]
+engine = ["*.html", "*.js", "*.css"]
+"src.analysis" = ["schemas/*.json"]

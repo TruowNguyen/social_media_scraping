@@ -1,0 +1,13 @@
+{
+  "schema_version": "taxonomy-human-evaluation-v1",
+  "taxonomy_version": "1.0.0-draft.1",
+  "status": "AWAITING_REAL_SAMPLES_AND_REVIEWER",
+  "provenance": "REAL_SOURCE_SAMPLES_REQUIRED",
+  "required_sample_fields": [
+    "sample_id", "node_id", "node_type", "source_id", "raw_revision_id",
+    "target_text", "context_items", "publication_precision", "published_at",
+    "labelled_by", "labelled_at", "expected_relevance", "expected_issue_ids",
+    "expected_project_basis", "evidence", "review_notes"
+  ],
+  "samples": []
+}

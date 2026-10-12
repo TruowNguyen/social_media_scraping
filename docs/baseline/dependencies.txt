@@ -1,0 +1,26 @@
+certifi==2026.7.22
+charset-normalizer==3.5.2
+click==8.5.0
+datasketch==2.0.0
+ddgs==9.16.0
+defusedxml==0.7.1
+idna==3.20
+lxml==6.1.3
+numpy==2.5.3
+praw==7.8.2
+prawcore==2.4.0
+primp==2.0.1
+py3langid==0.4.0
+pyaes==1.6.1
+pyasn1==0.6.4
+python-dotenv==1.2.4
+requests==2.34.2
+rsa==4.9.1
+scipy==1.18.1
+telethon==1.45.0
+update-checker==1.0.0
+urllib3==2.8.0
+websocket-client==1.9.2
+x-tweet-fetcher @ git+https://github.com/ythx-101/x-tweet-fetcher.git@2cbabb2257dc10fc9a4872d16849859763073ad2
+youtube-transcript-api==1.2.4
+yt-dlp==2026.8.19

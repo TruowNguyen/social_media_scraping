@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Classification result v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "batch_id",
+    "results"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "classification-result-v2"
+    },
+    "batch_id": {
+      "$ref": "#/$defs/id"
+    },
+    "results": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/result"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "\\S"
+    },
+    "reason": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "pattern": "\\S"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "match": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "project_id",
+        "basis",
+        "evidence_ids"
+      ],
+      "properties": {
+        "project_id": {
+          "$ref": "#/$defs/id"
+        },
+        "basis": {
+          "enum": [
+            "CONTENT_EXPLICIT",
+            "PARENT_CONTEXT",
+            "GROUP_CONTEXT",
+            "UNRESOLVED"
+          ]
+        },
+        "evidence_ids": {
+          "type": "array",
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_id",
+        "origin_item_id",
+        "quote"
+      ],
+      "properties": {
+        "evidence_id": {
+          "$ref": "#/$defs/id"
+        },
+        "origin_item_id": {
+          "$ref": "#/$defs/id"
+        },
+        "quote": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 5000,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "issue_id",
+        "summary",
+        "location",
+        "evidence"
+      ],
+      "properties": {
+        "issue_id": {
+          "$ref": "#/$defs/id"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "pattern": "\\S"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/evidence"
+          }
+        }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "item_id",
+        "revision_id",
+        "relevance",
+        "project_matches",
+        "issues",
+        "confidence",
+        "needs_review",
+        "review_reason",
+        "drop_reason"
+      ],
+      "properties": {
+        "item_id": {
+          "$ref": "#/$defs/id"
+        },
+        "revision_id": {
+          "$ref": "#/$defs/id"
+        },
+        "relevance": {
+          "enum": [
+            "KEEP",
+            "DROP",
+            "REVIEW"
+          ]
+        },
+        "project_matches": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "$ref": "#/$defs/match"
+          }
+        },
+        "issues": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "$ref": "#/$defs/issue"
+          }
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "needs_review": {
+          "type": "boolean"
+        },
+        "review_reason": {
+          "$ref": "#/$defs/reason"
+        },
+        "drop_reason": {
+          "$ref": "#/$defs/reason"
+        },
+        "content_intents": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "ADVERTISING",
+              "SALES",
+              "RECRUITMENT",
+              "RENTAL",
+              "BUY_SELL",
+              "LOAN_DEBT",
+              "GOODS_EXCHANGE",
+              "COMPLAINT",
+              "INFORMATIONAL",
+              "UNKNOWN"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

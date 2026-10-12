@@ -1,0 +1,131 @@
+# Exclude clear commercial/recruitment/trade intent before deep collection.
+# Keywords alone or the group name must not trigger a drop.
+schema_version: "exclusion-config-v2"
+
+exclusion_sets:
+  - exclusion_set_id: "smartcity_noise_signals"
+    mode: "EXCLUDE_CLEAR_INTENT"
+    hard_drop_on_keyword: false
+    preserve_operational_complaints: true
+    rules:
+      - rule_id: "NO_SALES_RECRUITMENT_BUY_SELL_EXCHANGE"
+        enabled: true
+        apply_at: "CANDIDATE_PREFILTER"
+        excluded_intents:
+          - "SALES_MARKETING"
+          - "RECRUITMENT"
+          - "REAL_ESTATE_LISTING"
+          - "BUY_SELL"
+          - "GOODS_EXCHANGE"
+          - "RENTAL"
+          - "LOAN_DEBT"
+        decision_basis: "CLEAR_POST_INTENT"
+        use_group_name_as_drop_reason: false
+        preserve_operational_complaints: true
+        ambiguous_action: "REVIEW"
+        on_match:
+          action: "DROP"
+          fetch_full_content: false
+          fetch_comments: false
+          download_media: false
+          call_llm: false
+          store_raw_content: false
+          export_to_signals: false
+          retain_rejection_metadata_only: true
+          rejection_metadata_fields:
+            - "platform_item_id"
+            - "source_id"
+            - "source_url"
+            - "crawl_run_id"
+            - "collected_at"
+            - "rule_id"
+            - "drop_reason"
+    intents:
+      RENTAL:
+        signals:
+          - "cho thuê"
+          - "cần thuê"
+          - "tìm phòng thuê"
+          - "cho thuê xe"
+      LOAN_DEBT:
+        signals:
+          - "cho vay"
+          - "cần vay"
+          - "vay tiền"
+          - "vay vốn"
+          - "vay nợ"
+          - "vay trả góp"
+          - "giải ngân"
+          - "đáo hạn"
+          - "mua bán nợ"
+      REAL_ESTATE_LISTING:
+        signals:
+          - "bán nhà"
+          - "bán căn hộ"
+          - "cho thuê"
+          - "môi giới"
+          - "booking"
+          - "đặt cọc"
+          - "bảng giá"
+          - "chiết khấu"
+      SALES_MARKETING:
+        signals:
+          - "bán vé"
+          - "nhận đặt vé"
+          - "đại lý vé"
+          - "vé giá rẻ/giá sỉ kèm liên hệ"
+          - "bán hàng"
+          - "khuyến mãi"
+          - "ưu đãi"
+          - "mua ngay"
+      RECRUITMENT:
+        signals:
+          - "tiếp nhận thông tin nhân sự"
+          - "tìm kiếm ứng viên"
+          - "việc làm hấp dẫn"
+          - "tuyển dụng khối văn phòng"
+          - "tuyển số lượng lớn công nhân kèm bao ăn ở/phụ cấp"
+          - "bổ sung công nhân"
+          - "bổ sung nhân sự"
+          - "tiếp nhận lao động"
+          - "tuyển 4-5 thợ"
+          - "#tuyendung kèm vai trò và lương/liên hệ"
+          - "xin việc"
+          - "muốn xin vào làm"
+          - "tuyển đội thi công"
+          - "tìm gấp công nhân đi làm"
+          - "tuyển lao động phổ thông"
+          - "tuyển dụng"
+          - "tuyển công nhân"
+          - "tuyển kỹ sư"
+          - "việc làm"
+          - "CV"
+          - "phỏng vấn"
+          - "tuyển thợ"
+          - "cần tuyển"
+          - "tìm nhân sự"
+          - "ứng tuyển"
+      BUY_SELL:
+        signals:
+          - "mua bán"
+          - "cần mua"
+          - "cần bán"
+          - "rao bán"
+          - "thanh lý"
+          - "sang nhượng"
+          - "bán xe"
+          - "nhượng phòng"
+      GOODS_EXCHANGE:
+        signals:
+          - "trao đổi hàng hóa"
+          - "đổi đồ"
+          - "đổi hàng"
+          - "đổi xe"
+          - "giao lưu đổi đồ"
+          - "bù tiền"
+      GENERAL_PR:
+        signals:
+          - "quảng cáo"
+          - "khai trương"
+          - "sự kiện ra mắt"
+    notes: "User rule: exclude clear sales, recruitment, rental, loan/debt solicitation, buy/sell and goods exchange posts. Explicit offers in titles/captions do not require contact details to trigger DROP. Acquisition filters before deep fetch/media/LLM and retains rejection metadata only. Group names, operational shift exchanges and wage-debt complaints are not standalone DROP grounds. GENERAL_PR remains downstream; legacy collectors do not load this YAML."

@@ -1,0 +1,38 @@
+{
+  "schema_version": "classification-result-v2",
+  "batch_id": "example_batch_001",
+  "results": [
+    {
+      "item_id": "comment_001",
+      "revision_id": "revision_001",
+      "relevance": "KEEP",
+      "project_matches": [
+        {
+          "project_id": "vinwonders_vu_yen",
+          "basis": "PARENT_CONTEXT",
+          "evidence_ids": [
+            "ev_parent"
+          ]
+        }
+      ],
+      "issues": [
+        {
+          "issue_id": "ENTRY_QUEUE",
+          "summary": "Phản ánh chờ lâu để vào cổng.",
+          "location": null,
+          "evidence": [
+            {
+              "evidence_id": "ev_target",
+              "origin_item_id": "comment_001",
+              "quote": "Chờ 40 phút vẫn chưa vào được cổng"
+            }
+          ]
+        }
+      ],
+      "confidence": null,
+      "needs_review": false,
+      "review_reason": null,
+      "drop_reason": null
+    }
+  ]
+}

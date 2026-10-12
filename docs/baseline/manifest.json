@@ -1,0 +1,132 @@
+{
+  "audit_date": "2026-10-08",
+  "client_timezone": "Asia/Saigon",
+  "git_head": "c876bbf86419c30046585baf808e0411b345ccd7",
+  "code_changes_during_audit": false,
+  "prd": {
+    "path_relative_to_repo": "../PRD_SmartCity_Operational_Social_Listening_VinCons_v0.1.md",
+    "sha256": "92a23ae94549cd4b94c7d5b2b215121a3e760ed7c03f4c0285fb539e4219efb7"
+  },
+  "runtime": {
+    "os": "Windows",
+    "python_version": "3.13.13",
+    "venv": ".venv/audit",
+    "models_installed": false
+  },
+  "checks": {
+    "selfcheck_schema.py": {
+      "exit_code": 0
+    },
+    "selfcheck_twtr_retry.py": {
+      "exit_code": 0,
+      "mocked_cases": 8
+    },
+    "demo.py": {
+      "exit_code": 0,
+      "record_count": 3
+    },
+    "first_party_py_compile": {
+      "exit_code": 0,
+      "file_count": 11
+    },
+    "git_bash_syntax_check": {
+      "exit_code": 0,
+      "command": "bash -n run-scrapers.sh"
+    },
+    "fresh_process_collector_imports": {
+      "exit_code": 0,
+      "collectors": [
+        "reddit-scraper.py",
+        "tel-scraper.py",
+        "tiktok-scraper.py",
+        "truth-scraper.py",
+        "twtr-scraper.py",
+        "yt-scraper.py"
+      ],
+      "called_main": false,
+      "live_collection": false
+    }
+  },
+  "demo": {
+    "file": "demo.json",
+    "sha256_stdout_windows": "e21cd786f9bbf502522f5192a0ee342838ce09834376c04efe3cc09c15661e98",
+    "sha256_canonical_json": "bd6f88176669c0468419d5782542fe97776fd9be0649bf99df3294ff08002c53",
+    "record_ids": [
+      "X_demo_news_1800000000000000000",
+      "Telegram_demo_news_1",
+      "Telegram_demo_news_2"
+    ],
+    "languages": [
+      "en",
+      "en",
+      "fa"
+    ],
+    "duplicate_flags": [
+      false,
+      true,
+      false
+    ],
+    "quality_scores": [
+      100,
+      100,
+      100
+    ],
+    "all_complete": true
+  },
+  "dependency_snapshot": {
+    "file": "dependencies.txt",
+    "sha256": "f14b5985831c3b9c3f9595ef17b0e7248807da80093b64a3e39af65b3dda1548"
+  },
+  "tracked_files_at_baseline": {
+    ".env.example": "970f792562ed6ad0be54552b8d39bf0dd3d9e6735725a76236623bf08d438633",
+    ".github/workflows/ci.yml": "5563edb5f5fd141aeeadc7716fbe8957596c097b17b3a3d6e887222a4109e4e6",
+    ".gitignore": "d982eb30e4b7b88dd14725d05dad93e9442877af00c9275b81b42e86597a3ef9",
+    ".graphifyignore": "bc5e5f5eb8530a0759d24c6fd3207ff22969b3fb6b066c5265762f76a89dbc08",
+    "README.md": "65ca6e12336984e82e1bbd7c162a3838c218700a8b184ce7707e5bc7023bbfb4",
+    "assets-registry/asset-registry.example.json": "743423723e224919bf2853c42a532e20d03e57d0730a85b9f680ab5926f36f65",
+    "dedup_utils.py": "d6dce46139f57acf3b245b118f2eb93c6cfc42788fd806423bd677663b09f3a0",
+    "demo.py": "83b7e2372d6cce6184a434eb678c6f90d2479c3ada76eb224782432eb25c02e2",
+    "examples/keywords/reddit-keywords.txt": "7555c601dc7b1d8d672fc06bba143606edada5e9dd436178a7f7476ef4bf6c03",
+    "examples/keywords/tiktok-keywords.txt": "7555c601dc7b1d8d672fc06bba143606edada5e9dd436178a7f7476ef4bf6c03",
+    "examples/keywords/truth-keywords.txt": "7555c601dc7b1d8d672fc06bba143606edada5e9dd436178a7f7476ef4bf6c03",
+    "examples/keywords/twtr-keywords.txt": "7555c601dc7b1d8d672fc06bba143606edada5e9dd436178a7f7476ef4bf6c03",
+    "examples/keywords/yt-keywords.txt": "7555c601dc7b1d8d672fc06bba143606edada5e9dd436178a7f7476ef4bf6c03",
+    "examples/sources/reddit-subreddits.txt": "a42a623f46fe3984e2240710f321bbbd28fe96c1232ece7efed5fda002be76aa",
+    "examples/sources/tel-channels.txt": "741dde7eca2055aae147d760db1e6c8cb5c79e35d336b23619a35959d989fe9d",
+    "examples/sources/tiktok-accounts.txt": "251210c34e514a9b09b89bd60edf0f16be26b085785e49a5bb18081a840e53ab",
+    "examples/sources/truth-accounts.txt": "611f6499c121897e31a620e3cc0d3b3378be2aacc4dfcd73406d8d1d9183b036",
+    "examples/sources/twtr-accounts.txt": "8b318cb0d13506f167e793ab7a65cc0849190c80ab655612695f010146acd88d",
+    "examples/sources/yt-channels.txt": "c010f5a8508069944a17e18250baf91b57cd5396c7f0b4f3492c04be89f6f0b7",
+    "pipeline_utils.py": "2ab7ffe13e24ff491cfafed6a6444732b5bf22a58a22e57e31c9d8a662ed62e1",
+    "reddit-scraper.py": "e4f849488e8b411f493daa63b0a242d17955b703673fbbf6aa2ea8543f1a022f",
+    "requirements-core.txt": "45f63b5742848d2597535b7646fe4349c9a1f9624bfbef48c2c83bd4f5b7ceaa",
+    "requirements-models.txt": "64b5609ee50d00d8fbab98282b6af3b17fbd5d10c8df40ae8d91ca91731de617",
+    "requirements.txt": "bd5cbcb129eb1f1ce3fc919d8f4557b4932f187c4859826f1a7270f318fe143c",
+    "run-scrapers.sh": "70f534329e73ce6b2eff88ee9eb18d45160ae35a2b8f849e48c2980fc8a49156",
+    "selfcheck_schema.py": "56e4aabaf94db0301eda04ca7de6d056bceb20062a5c778f8ec781763c30c501",
+    "selfcheck_twtr_retry.py": "e2b0f43bb3d3353d87e5afd6ddee2f73a11b502f6489d5ce15cb489fdb62038a",
+    "tel-scraper.py": "42f808fc2b82a79a500ddd19f08accfbc8a38502b218640f7c58f47693e54d47",
+    "tiktok-scraper.py": "bc732a7cd3516e24d665b6a43606e59906bfe4bd8428007b9d73c63282987fef",
+    "truth-scraper.py": "72b71791b9d321ca6406b3c8540a96abd5d9ac5f272953cb9538c74708ead27f",
+    "twtr-scraper.py": "a5f745dac91bb13af48b6253e23cdc43d29005bcec414dbc1e6ef318db5d56e6",
+    "yt-scraper.py": "9a927ebf0314aeac25d49aa16200d04fc7026fe0d162242bb442eff5d622d01e"
+  },
+  "dedup_probe": {
+    "first": "not duplicate",
+    "exact": "duplicate in first group",
+    "near_today_to_again": "duplicate in first group",
+    "unrelated": "not duplicate",
+    "same_id_repeat": "not self duplicate",
+    "reload": "all six IDs persisted",
+    "empty_different_ids": "second empty string is duplicate of first",
+    "empty_content_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "limits": [
+    "No live platform access/coverage test",
+    "No model accuracy or ASR/OCR/vision benchmark",
+    "No product KPI baseline",
+    "Python 3.12 matrix not executed locally",
+    "Runner syntax checked; runner/cron not executed",
+    "No production data migration"
+  ]
+}

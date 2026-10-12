@@ -1,0 +1,63 @@
+schema_version: acquisition-config-v1
+sources:
+- source_id: tt_search_vincons
+  platform: tiktok
+  source_type: TIKTOK_SEARCH
+  name: VinCons keyword/hashtag search
+  url: https://www.tiktok.com/search/video?q=VinCons
+  enabled: false
+  access_type: UNKNOWN
+  access_verified: false
+  verification_status: PENDING_VERIFICATION
+  requires_login: null
+- source_id: google_social_vincons
+  platform: google
+  source_type: GOOGLE_SEARCH
+  name: SerpApi Google social discovery
+  url: https://serpapi.com/search.json
+  credential_ref: env:SERPAPI_API_KEY
+  search_date_filter: WINDOW
+  enabled: true
+  access_type: PUBLIC
+  access_verified: true
+  verification_status: VERIFIED
+  requires_login: false
+  access_verified_on: '2026-10-08'
+  access_verification_method: SUCCESSFUL_SERPAPI_ACCOUNT_AND_SEARCH_PROBE
+watchlists:
+- watchlist_id: vincons_acquisition_v1
+  name: VinCons Facebook, TikTok search and Google discovery
+  enabled: true
+  status: ACTIVE
+  source_ids:
+  - fb_group_139108668844789
+  - fb_group_880263084346112
+  - fb_group_2249052912495339
+  - fb_group_669205626514948
+  - fb_group_suanhathuduc
+  - fb_group_144732306144575
+  - fb_group_1675953926771851
+  - tt_search_vincons
+  - google_social_vincons
+  - fb_group_vinwondersroyalparkhaiphong
+  - fb_group_reviewhaiphong.vinwondersvuyen
+  - fb_group_1280258833374137
+  - fb_group_1463368281672061
+  - fb_group_1500004461400003
+  - fb_group_681283966885365
+  - fb_group_718379403948782
+  query_set_ids:
+  - vincons_ecosystem
+  exclusion_set_id: smartcity_noise_signals
+  prefilter_rule_ids:
+  - NO_SALES_RECRUITMENT_BUY_SELL_EXCHANGE
+  retrieval:
+    mode: ACQUISITION_V1
+    require_keyword_match: false
+    include_comments: false
+    content_types:
+    - POST
+    - VIDEO
+    lookback_minutes: 10080
+    max_items_per_source: 100
+  schedule_profile: null
