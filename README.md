@@ -4,17 +4,28 @@ Repository độc lập: [TruowNguyen/social_media_scraping](https://github.com/
 
 Tài liệu hiện hành: [bàn giao dev 12/10](docs/development-handoff-20261012.md), [trạng thái code/config](docs/current-state.md), [Dashboard workspace](docs/operations/dashboard-workspace.md) và [đồng bộ đa nền tảng](docs/operations/workspace-platforms-20261012.md).
 
+Ngày 14/10: [sửa theo dõi Facebook Chạy ngay](docs/operations/facebook-direct-reconnect-20261014.md), tiến độ từng group/bài/bình luận, đọc trạng thái độc lập và giữ kết quả khi kết nối lỗi tạm thời.
+
 Thu thập nội dung Facebook, tìm kiếm Threads theo dự án và tìm link mạng xã hội qua Google để theo dõi phản ánh liên quan VinCons và VinWonders Vũ Yên. Dự án có giao diện local, acquisition engine, Source Registry, exclusion rules, SQLite lưu nội dung/lineage và lịch crawl hằng ngày riêng từng nền tảng.
 
 Hướng dẫn dành cho workspace Windows `D:\task\social_listening\social_media_scraping`, đồng bộ với code/config ngày **12/10/2026**. Trạng thái và bằng chứng chi tiết: [TODO.MD](TODO.MD). Các báo cáo có ngày là snapshot của lượt kiểm tra đó.
 
-Dashboard dùng [luồng crawl raw v2](docs/operations/dashboard-raw-v2.md): bài viết → bình luận/phản hồi → lưu raw → OCR ảnh bài → filter từng nội dung → [worker phân loại Gemini](docs/operations/classification-worker.md). Nút crawl và lịch không còn chạy crawler Facebook v1. Kho dữ liệu hỗ trợ loại nội dung, đánh giá/ghi chú và Excel; tab Phản ánh có bộ lọc group, dự án, vấn đề, intent và ngày riêng của từng nội dung. Worker hỗ trợ chế độ nền `--serve`, mặc định poll 15 giây; trạng thái tiến trình xem trên dashboard. Chưa tự khởi động cùng Windows.
+Dashboard dùng [luồng crawl raw v2](docs/operations/dashboard-raw-v2.md): bài viết → bình luận/phản hồi → lưu raw → OCR ảnh bài → filter từng nội dung → [worker phân loại Gemini](docs/operations/classification-worker.md). Nút crawl và lịch không còn chạy crawler Facebook v1. Kho dữ liệu hỗ trợ loại nội dung, đánh giá/ghi chú và Excel; tab Phản ánh có bộ lọc group, dự án, vấn đề, intent và ngày riêng của từng nội dung. Worker hỗ trợ chế độ nền `--serve`, mặc định poll 15 giây; trạng thái tiến trình xem trên dashboard. Từ 13/10/2026 có [supervisor local và chạy bù](docs/operations/local-runtime-recovery.md), tự bật dashboard/classifier khi đăng nhập Windows.
 
 Đã hợp nhất vào **một DB hoạt động**: `sessions/acquisition/acquisition.sqlite3`. Raw, phân loại, đánh giá, lịch sử v1 và Google discovery dùng chung file; các bảng có chức năng riêng. File `sessions/conversations-v2.sqlite3` cũ đã bỏ sau backup và kiểm tra integrity/FK. Xem [hợp nhất và crawl 14 ngày](docs/operations/unified-database-backfill.md).
 
 Phạm vi lựa chọn gồm **VinCons (tổ chức)** và **VinWonders Vũ Yên**. Chọn phạm vi trong lịch để giới hạn group; lựa chọn trống chạy tất cả group đang bật (hiện 14 group). Group chỉ là ngữ cảnh, không chứng minh nội dung phản ánh thuộc dự án. Pilot raw v2 thật ngày 09/10 đã lưu 6 bình luận; chưa xác nhận coverage toàn group hoặc đầy đủ replies.
 
 ## 1. Chạy nhanh trên máy hiện tại
+
+Để tự chạy khi đăng nhập Windows, cài một lần:
+
+```powershell
+Set-Location 'D:\task\social_listening\social_media_scraping'
+.\scripts\Install-LocalRuntime.ps1
+```
+
+Tác vụ `SocialListeningRuntime` chạy nền, giữ dashboard và classifier độc lập, tự thay worker đã kết thúc và chạy bù ca đã đóng trong tối đa 7 ngày có lịch sử cấu hình. Lần cài đầu chỉ đối soát hôm nay. Không cần mở riêng hai terminal. Máy tắt/ngủ không crawl được; khi hoạt động lại sẽ đối soát lịch và dữ liệu đang chờ. Xem [hướng dẫn vận hành](docs/operations/local-runtime-recovery.md) để kiểm tra trạng thái, tắt tự khởi động hoặc chạy thủ công.
 
 Mở PowerShell, dùng venv `.venv\audit` đã cài sẵn:
 
@@ -233,6 +244,8 @@ Tab **Phản ánh** có các bộ lọc chính: từ khóa, dự án theo dõi, 
 ## Thu thập Threads
 
 Threads đã triển khai tìm kiếm theo truy vấn dự án bằng **Playwright + Chrome**, thu bài viết/trả lời, lưu raw vào kho chung trước filter/classify và dùng Gemini theo batch. Trong tab **Thu thập**, chọn Facebook hoặc Threads; nguồn/query, lượt chạy và lịch độc lập. Kho dữ liệu/Phản ánh có bộ lọc nền tảng, nguồn/truy vấn và export Excel.
+
+**VinCons 13/10:** ưu tiên `"VinCons"` và truy vấn theo kẹt cổng/tan ca/chấm công/nhận diện khuôn mặt; giữ query rộng để đối chiếu. Parser xác minh truy vấn/vùng kết quả; raw được lưu trước khi hoãn fetch/rescan bài không có evidence dự án. Tối đa hai hội thoại thiếu evidence/query; alias đúng chưa đồng nghĩa là phản ánh. [Luồng, pilot và giới hạn](docs/operations/threads-vincons-scope-20261013.md).
 
 **Giao diện 12/10:** trạng thái đầu trang và nguồn/chi tiết ghi rõ Facebook/Threads. **Thu thập → Threads → Lịch hằng ngày** chọn nhiều dự án; hiện đã lưu VinCons và VinWonders Vũ Yên, hai ca 05:00–08:30 và 17:00–18:30, 45 phút. **Nguồn theo dõi** cho biết số nội dung/lượt gần nhất từng truy vấn; Snapshot mới đã có dữ liệu qua truy vấn VinCons; chưa nghiệm thu tính liên quan/coverage. [Kiểm chứng](docs/operations/workspace-platforms-20261012.md).
 

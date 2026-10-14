@@ -8,6 +8,7 @@ import threading
 import uuid
 from engine.threads_registry import ThreadsRegistry
 from engine.threads_worker import crawl
+from src.acquisition.projects import load_projects
 from src.acquisition.models import Window,parse_utc,utcnow
 from src.storage.conversations import ConversationStore,encode
 
@@ -166,7 +167,7 @@ class ThreadsService:
             threading.Thread(target=heartbeat,daemon=True).start()
             try:
                 update({'status':'PROBING'})
-                result=self.executor(self.database,config,queries,window,run_id,'POST_ONLY' if inventory_only else scope,progress=update,cancel=cancelled,
+                result=self.executor(self.database,config,queries,window,run_id,'POST_ONLY' if inventory_only else scope,projects=load_projects(self.config_dir),progress=update,cancel=cancelled,
                     lease={'platform':'THREADS','token':token})
                 update(result)
             except Exception:

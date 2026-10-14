@@ -31,7 +31,7 @@ Invoke-RestMethod -Uri 'http://127.0.0.1:8765/api/schedule'
 
 Lịch lưu atomically ở `sessions/acquisition/dashboard-schedule.json`. `/api/crawl` khởi chạy Facebook raw v2, `/api/search` là Google/SerpApi discovery, `/api/jobs/active` giúp UI nhận lại job sau refresh. API giữ tương thích ROLLING/FIXED: ROLLING tính lookback tại lúc chạy; FIXED dùng khoảng ngày Việt Nam và dừng khi hết khoảng. UI hiện dùng DAILY_SLOTS; giá trị 30 phút/7 ngày của API mới chưa có lịch không phải lịch pilot đã lưu.
 
-**Giữ máy và backend chạy để lịch hoạt động.** Chưa có Windows service/wake hoặc scheduler đa tiến trình. Chỉ chạy một backend cùng DB/profile; xử lý login/CAPTCHA thủ công bằng đúng profile. Source error không xóa raw nguồn khác. CLI có catch-up theo khoảng ngày riêng, khác policy dashboard ngoài khung.
+**Máy phải hoạt động để crawl trực tiếp.** Từ 13/10/2026 có [supervisor local và task đăng nhập Windows](local-runtime-recovery.md): tự mở dashboard/classifier, nhận worker đang chạy và đối soát ca đã đóng trong tối đa 7 ngày có lịch sử. Lần cài đầu chỉ đối soát hôm nay. Policy scheduler trong ca giữ nguyên; planner chạy bù riêng qua supervisor, không replay toàn bộ tick. Chưa có cơ chế wake máy; tắt/ngủ máy thì dừng, mở lại mới xử lý tiếp. Chỉ chạy một backend cùng DB/profile; xử lý login/CAPTCHA thủ công bằng đúng profile. Source error không xóa raw nguồn khác.
 
 ## Bằng chứng
 

@@ -2,20 +2,20 @@
 import hashlib
 import re
 import time
-from urllib.parse import urlencode, urlsplit
+from urllib.parse import urlencode, urlsplit, parse_qs
 import requests
 from src.acquisition.browser import navigate,page_failure
 from src.acquisition.identity import identify
 from src.acquisition.models import AdapterError,parse_utc
 from src.domain.conversation import ContentNode
 
-PARSER_VERSION='threads-dom-v4'
+PARSER_VERSION='threads-dom-v5'
 READ_DOM=r'''() => {
  const out=[],seen=new Set();
  for(const t of document.querySelectorAll('a[href*="/post/"] time')){
   const a=t.closest('a'), href=a.getAttribute('href');
   if(!/^\/@[^/]+\/post\/[A-Za-z0-9_-]+$/.test(href)||seen.has(href))continue;
-  const row=a.closest('[data-pressable-container]');if(!row)continue;
+  const row=a.closest('[data-pressable-container]');if(!row||!row.getClientRects().length)continue;
   seen.add(href);
   const own=e=>e.closest('[data-pressable-container]')===row;
   const actions=Array.from(row.querySelectorAll('[role="button"],button')).filter(own);
@@ -96,8 +96,21 @@ class ThreadsBrowserAdapter:
 
     def probe_access(self,source):
         navigate(self.page,'https://www.threads.com/search?'+urlencode({'q':source['query'],'serp_type':'default','filter':'recent'}),self.deadline)
-        rows=self._await_rows()
-        return {'search_recent':'SUPPORTED','public_replies':'UNVERIFIED','observed_order':'RECENT_UI','candidates':len(rows)}
+        self._await_rows();rows=self._search_rows(source['query'])
+        return {'search_recent':'SUPPORTED','public_replies':'UNVERIFIED','observed_order':'RECENT_UI','candidates':len(rows),
+                'query_verified':True,'parser_version':PARSER_VERSION}
+
+    def _search_rows(self,query):
+        target=urlsplit(self.page.url)
+        if target.hostname not in {'threads.com','www.threads.com'} or target.path.rstrip('/')!='/search' or parse_qs(target.query).get('q')!=[query]:
+            raise AdapterError('EXTRACTION_FAILED','SEARCH_QUERY_MISMATCH')
+        values=self.page.evaluate('''() => [...document.querySelectorAll('input')]
+            .filter(e=>e.getClientRects().length).map(e=>e.value)''')
+        if query not in values:raise AdapterError('EXTRACTION_FAILED','SEARCH_QUERY_UNVERIFIED')
+        rows=self._read()
+        scoped=[r for r in rows if (r.get('pagelet') or '').startswith('threads_search_results_')]
+        if rows and not scoped:raise AdapterError('EXTRACTION_FAILED','SEARCH_RESULTS_SELECTOR_MISMATCH')
+        return scoped
 
     def _scroll(self):
         # Depending on the layout the scroll owner is the column or the document.
@@ -116,11 +129,13 @@ class ThreadsBrowserAdapter:
         navigate(self.page,'https://www.threads.com/search?'+urlencode({'q':request['query'],'serp_type':'default','filter':'recent'}),self.deadline)
         seen=set();pages=request.get('max_pages',5)
         for index in range(pages):
-            rows=self._await_rows() if index==0 else self._read()
+            if index==0:self._await_rows()
+            rows=self._search_rows(request['query'])
             fresh=[item for item in rows if item['url'] not in seen]
             seen.update(item['url'] for item in fresh)
             yield {'items':fresh,'page':index,'observed_order':'RECENT_UI',
-                'empty_verified':not rows and index==0,'exhausted':False,'method':self.method}
+                'empty_verified':not rows and index==0,'exhausted':False,'method':self.method,
+                'query_verified':True,'parser_version':PARSER_VERSION}
             if not fresh:return
             self.deadline.check();self._scroll()
             self.page.wait_for_timeout(min(1200,self.deadline.milliseconds()))

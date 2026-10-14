@@ -49,12 +49,12 @@ class OCRTests(unittest.TestCase):
         before=build_item(self.raw,child,self.source,self.snapshot)
         save(self.raw,self.id,REF,self.evidence());after=build_item(self.raw,child,self.source,self.snapshot)
         queue=ClassificationJobs(self.raw)
-        self.assertFalse(queue._current(before));self.assertTrue(queue._current(after))
+        self.assertFalse(queue._current(before,self.snapshot));self.assertTrue(queue._current(after,self.snapshot))
         self.assertNotEqual(job_key(before,self.snapshot,'model'),job_key(after,self.snapshot,'model'))
         first=read(self.raw,self.id)[0]['evidence_id'];save(self.raw,self.id,REF,self.evidence())
         self.assertEqual(read(self.raw,self.id)[0]['evidence_id'],first)
         save(self.raw,self.id,REF,self.evidence('VinCons chờ 50 phút'))
-        self.assertFalse(queue._current(after))
+        self.assertFalse(queue._current(after,self.snapshot))
 
     def test_commercial_ocr_requires_review_and_raw_is_retained(self):
         save(self.raw,self.id,REF,self.evidence('Tuyển dụng công nhân VinCons, liên hệ 0901234567'))

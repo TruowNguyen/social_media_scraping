@@ -10,6 +10,32 @@ URL='https://www.facebook.com/groups/123/posts/111'
 
 
 class FacebookThreadTests(unittest.TestCase):
+    def test_flat_rescan_does_not_demote_saved_reply_or_lose_batch(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store=ConversationStore(Path(directory)/'db.sqlite3')
+            try:
+                root=store.ingest(ContentNode('POST',platform_item_id='111',canonical_url=URL),'group','r')['node_id']
+                save_comment_batch(store,[self.row('222'),self.row('333',parent_native_id='222')],root,URL,'group','r1','task',{})
+                save_comment_batch(store,[self.row('333'),self.row('444')],root,URL,'group','r2','task',{})
+                rows={n['platform_item_id']:n for n in store.list_nodes()}
+                self.assertEqual(rows['333']['node_type'],'REPLY')
+                self.assertEqual(rows['333']['parent_node_id'],rows['222']['node_id'])
+                self.assertIn('444',rows)
+            finally:store.close()
+
+    def test_explicit_parent_conflict_keeps_original_thread_and_rolls_back(self):
+        from src.acquisition.models import AdapterError
+        with tempfile.TemporaryDirectory() as directory:
+            store=ConversationStore(Path(directory)/'db.sqlite3')
+            try:
+                root=store.ingest(ContentNode('POST',platform_item_id='111',canonical_url=URL),'group','r')['node_id']
+                save_comment_batch(store,[self.row('222'),self.row('333',parent_native_id='222')],root,URL,'group','r1','task',{})
+                with self.assertRaises(AdapterError) as caught:
+                    save_comment_batch(store,[self.row('444'),self.row('333',parent_native_id='444')],root,URL,'group','r2','task',{})
+                self.assertEqual(caught.exception.code,'COMMENT_PARENT_CONFLICT')
+                self.assertNotIn('444',{n['platform_item_id'] for n in store.list_nodes()})
+            finally:store.close()
+
     def row(self,identifier,**kwargs):
         return normalize_comment(dict(native_id=identifier,text='comment',parser='fixture',**kwargs),URL,'111')
 

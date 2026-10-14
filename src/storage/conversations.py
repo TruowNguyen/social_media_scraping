@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS legacy_node_map(record_id TEXT PRIMARY KEY,node_id TE
 CREATE TABLE IF NOT EXISTS conversation_migrations(migration_id TEXT PRIMARY KEY,payload TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS node_thread ON content_nodes(root_post_id);
 CREATE INDEX IF NOT EXISTS observation_run ON conversation_observations(run_id);
+CREATE INDEX IF NOT EXISTS observation_node_source ON conversation_observations(node_id,source_id);
 CREATE TABLE IF NOT EXISTS ingest_page_receipts(page_id TEXT PRIMARY KEY,checksum TEXT NOT NULL,task_id TEXT NOT NULL,payload TEXT NOT NULL,committed_at TEXT NOT NULL);
 """
 
@@ -292,7 +293,14 @@ class ConversationStore:
             node = self.get(node_id)
             if not node:
                 raise ValueError('Raw node not found')
-            payload = dict(decision, filtered_at=utcnow(), raw_revision_id=node['revision_id'])
+            content = dict(decision, raw_revision_id=node['revision_id'])
+            content.pop('filtered_at', None)
+            previous = self.db.execute('SELECT payload FROM raw_filter_decisions WHERE node_id=? AND revision_id=? AND rule_version=?',
+                (node_id,node['revision_id'],rule_version)).fetchone()
+            if previous:
+                saved=json.loads(previous[0]);saved.pop('filtered_at',None)
+                if saved==content:return
+            payload = dict(content, filtered_at=utcnow())
             self.db.execute('INSERT OR REPLACE INTO raw_filter_decisions VALUES (?,?,?,?)',
                 (node_id, node['revision_id'], rule_version, encode(payload)))
 

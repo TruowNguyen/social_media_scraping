@@ -2,6 +2,8 @@
 
 Threads bổ sung `threads.yaml`: platform/provider enabled, query theo project, version/CAS, ambiguous/archive gates, readiness và budgets. Provider hiện tại `THREADS_BROWSER`, profile riêng `sessions/browser/threads`; không cần Threads token. Lịch lưu độc lập trong `platform_schedules`, cấu hình YAML không tự bật lịch. Pilot đã xác minh một keyword Vũ Yên, chưa xác minh API hoặc exact topic tags. [Hướng dẫn vận hành](../docs/operations/threads-acquisition.md).
 
+**VinCons 13/10:** config v3 có bảy query, ưu tiên `"VinCons"` và tên + vấn đề; `limits.unverified_conversations_per_query=2` (hợp lệ 0–20, mặc định 2 nếu config cũ chưa có). Scope gate lấy aliases từ `projects.yaml`, không suy entity bằng tên query, không bắt caption phải chứa issue. Không tự thêm tên công trường chưa xác nhận. [Kết quả pilot và giới hạn](../docs/operations/threads-vincons-scope-20261013.md).
+
 Đồng bộ với YAML/code ngày **11/10/2026**. Registry hiện có **14 group Facebook đã bật và xác minh**, gồm 7 nguồn VinCons và 7 nguồn VinWonders Vũ Yên. Phạm vi/tình trạng nghiệm thu: [trạng thái hiện hành](../docs/current-state.md).
 
 | File | Vai trò hiện tại |

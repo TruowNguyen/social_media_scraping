@@ -42,6 +42,8 @@ class Workspace:
         self.database, self.raw_database = Path(database), Path(raw_database)
         self.config_dir, self.classifier, self.service = Path(config_dir), classifier, service
         self.cache={};self.cache_lock=threading.Lock()
+        self.read_lock=threading.Lock()
+        self.counts_lock=threading.Lock();self.counts_cache=None
         raw = ConversationStore(self.raw_database)
         try:
             raw.db.executescript('''
@@ -90,6 +92,12 @@ class Workspace:
             raw.close()
 
     def view(self, params):
+        if not self.read_lock.acquire(timeout=1):
+            raise WorkspaceError('READ_BUSY','Hệ thống đang chuẩn bị dữ liệu. Chờ vài giây rồi bấm Làm mới dữ liệu; bảng đã lưu vẫn được giữ.',503)
+        try:return self._view(params)
+        finally:self.read_lock.release()
+
+    def _view(self, params):
         if params.get('view_id'):
             return self._page(self.stored_view(params['view_id']), params.get('page',1), params.get('page_size',25))
         kind = params.get('kind','CLASSIFY')
@@ -195,6 +203,7 @@ class Workspace:
                 matched=self._observations(raw,{k:v for k,v in filters.items() if k not in {'start_date','end_date'}})
                 rows=[r for r in rows if r.get('node_id') in matched]
             payload={'schema_version':'dashboard-view-v1','kind':kind,'filters':filters,'total':len(rows),'summary':summary,
+                'data_version':self._data_version(raw),
                 'filter_options':filter_choices(),
                 'processing_counts':dict(Counter(r['processing_status'] for r in rows)),
                 'units':dict(Counter(r['node_type'] for r in rows)), 'unknown_time_count':sum(n['publication_precision']!='INSTANT' for n in metadata.values()),
@@ -217,9 +226,36 @@ class Workspace:
                     raw.db.execute('DELETE FROM dashboard_views WHERE view_id IN (SELECT view_id FROM dashboard_views ORDER BY rowid DESC LIMIT -1 OFFSET 128)')
         finally:raw.close()
         with self.cache_lock:
-            if len(self.cache)>=32:self.cache.clear()
+            if len(self.cache)>=4:self.cache.clear()
             self.cache[cache_key]=(time.monotonic(),payload)
         return self._page(payload,params.get('page',1),params.get('page_size',25))
+
+    @staticmethod
+    def _data_version(raw):
+        tables={r[0] for r in raw.db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        markers={}
+        for table in ('content_nodes','content_revisions','conversation_observations','node_sources',
+                      'node_review_history','classification_jobs','node_analyses',
+                      'image_evidence','conversation_outbox'):
+            if table in tables:
+                markers[table]=(raw.db.execute('SELECT count(*) FROM '+table).fetchone()[0],
+                    raw.db.execute('SELECT max(rowid) FROM '+table).fetchone()[0])
+        markers['last_seen']=raw.db.execute('SELECT max(last_seen_at) FROM content_nodes').fetchone()[0]
+        if 'classification_jobs' in tables:
+            markers['job_states']=dict(raw.db.execute('SELECT status,count(*) FROM classification_jobs GROUP BY status'))
+        if 'raw_filter_decisions' in tables:
+            # Old workers can rewrite an identical decision with a new timestamp
+            # and rowid. Neither is a user-visible content/result update.
+            digest=hashlib.sha256()
+            for row in raw.db.execute("SELECT node_id,revision_id,rule_version,json_remove(payload,'$.filtered_at') FROM raw_filter_decisions ORDER BY node_id,revision_id,rule_version"):
+                digest.update(encode(list(row)).encode())
+            markers['filter_content']=digest.hexdigest()
+        return hashlib.sha256(encode(markers).encode()).hexdigest()
+
+    def data_version(self):
+        raw=self._open()
+        try:return {'data_version':self._data_version(raw),'as_of':utcnow()}
+        finally:raw.close()
 
     @staticmethod
     def _observations(raw, filters):
@@ -318,16 +354,18 @@ class Workspace:
                 return response
         finally:raw.close()
 
-    def health(self):
+    def health(self, lightweight=False):
         raw=self._open()
         try:
             tables={r[0] for r in raw.db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
             job_counts=dict(raw.db.execute('SELECT status,count(*) FROM classification_jobs GROUP BY status')) if 'classification_jobs' in tables else {}
-            from engine.classification_worker import classification_rows
-            counts=dict(Counter(r['processing_status'] for r in classification_rows(raw,load_snapshot(self.classifier.taxonomy_dir))))
-            reports=[json.loads(r[0]) for r in raw.db.execute('SELECT payload FROM dashboard_raw_runs ORDER BY rowid DESC LIMIT 30')] if 'dashboard_raw_runs' in tables else []
+            reports=[self._health_run(json.loads(r[0])) for r in raw.db.execute('SELECT payload FROM dashboard_raw_runs ORDER BY rowid DESC LIMIT 30')] if 'dashboard_raw_runs' in tables else []
             last_seen=raw.db.execute('SELECT max(last_seen_at) FROM content_nodes').fetchone()[0]
             nodes=raw.db.execute('SELECT count(*) FROM content_nodes').fetchone()[0]
+            if lightweight:
+                cached=self.counts_cache
+                counts,counts_as_of=(cached[2],cached[3]) if cached else ({},None)
+            else: counts,counts_as_of=self._health_counts(raw,(nodes,last_seen,tuple(sorted(job_counts.items()))))
             workers=[json.loads(r[0]) for r in raw.db.execute('SELECT payload FROM dashboard_worker_heartbeats')] if 'dashboard_worker_heartbeats' in tables else []
             for worker in workers:
                 worker['health']='STOPPED' if worker.get('status')=='STOPPED' else 'ACTIVE' if (datetime.now(timezone.utc)-datetime.fromisoformat(worker['updated_at'].replace('Z','+00:00'))).total_seconds()<45 else 'STALE'
@@ -342,8 +380,40 @@ class Workspace:
             sources.append({'source_id':sid,'name':s['name'],'registry_ready':registry.readiness(s) is None,'latest_outcome':latest})
         schedule=self.service.schedule_status() if hasattr(self.service,'schedule_status') else {'enabled':False,'health':'UNKNOWN'}
         threads=self.service.threads.catalog() if getattr(self.service,'threads',None) else None
-        return {'as_of':utcnow(),'schedule':schedule,'threads':threads,'classification':{'counts':counts,'job_counts':job_counts,'workers':workers,'health':workers[0]['health'] if workers else 'UNKNOWN',**self.classifier.status()},
+        if threads and threads.get('current_run'):
+            threads['current_run']={k:v for k,v in threads['current_run'].items() if k in {'run_id','status','started_at','updated_at','project_id','window_start','window_end'}}
+        if schedule.get('active_job'):
+            schedule['active_job']={k:v for k,v in schedule['active_job'].items() if k not in {'rows','source_outcomes'}}
+        return {'as_of':utcnow(),'schedule':schedule,'threads':threads,'classification':{'counts':counts,'counts_as_of':counts_as_of,'job_counts':job_counts,'workers':workers,'health':workers[0]['health'] if workers else 'UNKNOWN',**self.classifier.status()},
             'sources':sources,'runs':reports,'last_collected_at':last_seen,'nodes':nodes}
+
+    def _health_counts(self,raw,generation):
+        if not self.counts_lock.acquire(timeout=1):
+            raise WorkspaceError('READ_BUSY','Hệ thống đang cập nhật số liệu trạng thái. Vui lòng thử lại sau vài giây.',503)
+        try:
+            cached=self.counts_cache
+            if cached and cached[0]==generation and time.monotonic()-cached[1]<15:return cached[2],cached[3]
+            if not self.read_lock.acquire(timeout=1):
+                raise WorkspaceError('READ_BUSY','Hệ thống đang đọc dữ liệu; trạng thái sẽ được thử lại ở lượt tiếp theo.',503)
+            try:
+                from engine.classification_worker import classification_rows
+                counts=dict(Counter(r['processing_status'] for r in classification_rows(raw,load_snapshot(self.classifier.taxonomy_dir))))
+                as_of=utcnow();self.counts_cache=(generation,time.monotonic(),counts,as_of)
+                return counts,as_of
+            finally:self.read_lock.release()
+        finally:self.counts_lock.release()
+
+    @staticmethod
+    def _health_run(report):
+        # Status polling must not ship raw thread/content payloads.
+        result={k:v for k,v in report.items() if k!='jobs'}
+        result['jobs']=[]
+        for job in report.get('jobs',[]):
+            compact={k:v for k,v in job.items() if k in {'source_id','status','error_code','error_type','finished_at','coverage_complete','coverage','task_id'}}
+            if 'inventory' in job:compact['inventory']={k:v for k,v in job['inventory'].items() if k in {'run_id','status','error_code','error_type','observed_posts','observed_order','coverage'}}
+            compact['threads_attempted']=len(job.get('threads',[]))
+            result['jobs'].append(compact)
+        return result
 
     def preview(self):
         from engine.classification_worker import classification_rows

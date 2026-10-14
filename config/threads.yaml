@@ -1,5 +1,5 @@
 schema_version: threads-config-v1
-version: 2
+version: 3
 enabled: true
 provider: THREADS_BROWSER
 verification:
@@ -10,6 +10,54 @@ verification:
   parent_mapping: UNVERIFIED
   evidence_report: reports/threads-live-pilot-v3.json
 queries:
+- query_id: threads_vincons_exact
+  project_id: vincons
+  version: 1
+  type: KEYWORD
+  value: '"VinCons"'
+  enabled: true
+  ambiguous: false
+  archived: false
+- query_id: threads_vincons_gate
+  project_id: vincons
+  version: 1
+  type: KEYWORD
+  value: '"VinCons" kẹt cổng'
+  enabled: true
+  ambiguous: false
+  archived: false
+- query_id: threads_vincons_shift
+  project_id: vincons
+  version: 1
+  type: KEYWORD
+  value: '"VinCons" tan ca'
+  enabled: true
+  ambiguous: false
+  archived: false
+- query_id: threads_vincons_attendance
+  project_id: vincons
+  version: 1
+  type: KEYWORD
+  value: '"VinCons" chấm công'
+  enabled: true
+  ambiguous: false
+  archived: false
+- query_id: threads_vincons_face
+  project_id: vincons
+  version: 1
+  type: KEYWORD
+  value: '"VinCons" nhận diện khuôn mặt'
+  enabled: true
+  ambiguous: false
+  archived: false
+- query_id: threads_vincons_alias
+  project_id: vincons
+  version: 1
+  type: KEYWORD
+  value: Vin Cons
+  enabled: true
+  ambiguous: false
+  archived: false
 - query_id: threads_vincons_name
   project_id: vincons
   version: 1
@@ -65,3 +113,4 @@ limits:
   rescan_roots: 20
   seconds_per_query: 120
   seconds_per_run: 1200
+  unverified_conversations_per_query: 2

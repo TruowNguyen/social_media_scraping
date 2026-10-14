@@ -30,6 +30,81 @@ def fixture(db,count=3):
 
 
 class WorkspaceTests(unittest.TestCase):
+    def test_lightweight_health_does_not_compete_with_view_reads(self):
+        with patch('engine.classification_worker.classification_rows',side_effect=AssertionError('Heavy status scan')):
+            self.w.read_lock.acquire()
+            try:
+                health=self.w.health(lightweight=True)
+                self.assertEqual(health['nodes'],3)
+                self.assertEqual(health['classification']['counts'],{})
+                self.assertIsNone(health['classification']['counts_as_of'])
+            finally:self.w.read_lock.release()
+
+    def test_identical_filter_is_not_rewritten_or_reported_as_new_data(self):
+        raw=ConversationStore(self.db)
+        decision={'prefilter_decision':'REVIEW','drop_reason':None}
+        raw.filter_saved(self.ids[0],decision,'fixture-rule')
+        before=raw.db.execute('SELECT rowid,payload FROM raw_filter_decisions').fetchone()
+        changes=raw.db.total_changes;version=self.w.data_version()['data_version']
+        raw.filter_saved(self.ids[0],decision,'fixture-rule')
+        self.assertEqual(raw.db.total_changes,changes)
+        self.assertEqual(tuple(raw.db.execute('SELECT rowid,payload FROM raw_filter_decisions').fetchone()),tuple(before))
+        self.assertEqual(self.w.data_version()['data_version'],version)
+        raw.filter_saved(self.ids[0],{'prefilter_decision':'DROP','drop_reason':'SALE'},'fixture-rule')
+        self.assertNotEqual(self.w.data_version()['data_version'],version)
+        raw.close()
+
+    def test_legacy_timestamp_only_rewrite_keeps_data_version(self):
+        raw=ConversationStore(self.db)
+        raw.filter_saved(self.ids[0],{'prefilter_decision':'REVIEW'},'fixture-rule')
+        version=self.w.data_version()['data_version']
+        row=raw.db.execute('SELECT * FROM raw_filter_decisions').fetchone()
+        payload=json.loads(row['payload']);payload['filtered_at']='2099-01-01T00:00:00Z'
+        with raw.transaction():
+            raw.db.execute('INSERT OR REPLACE INTO raw_filter_decisions VALUES (?,?,?,?)',
+                (row['node_id'],row['revision_id'],row['rule_version'],json.dumps(payload,sort_keys=True)))
+        self.assertEqual(self.w.data_version()['data_version'],version)
+        raw.close()
+
+    def test_version_poll_does_not_build_rows_or_write_snapshots(self):
+        view=self.view()
+        with patch('engine.classification_worker.classification_rows') as classify:
+            version=self.w.data_version()
+            self.assertEqual(version['data_version'],view['data_version'])
+            classify.assert_not_called()
+        fixture(self.db,4)
+        self.assertNotEqual(version['data_version'],self.w.data_version()['data_version'])
+        raw=ConversationStore(self.db,initialize=False)
+        self.assertEqual(raw.db.execute('SELECT count(*) FROM dashboard_views').fetchone()[0],1)
+        raw.close()
+
+    def test_health_reuses_counts_and_invalidates_on_new_content(self):
+        statuses=[{'processing_status':'UNCLASSIFIED'}]*3
+        with patch('engine.classification_worker.classification_rows',return_value=statuses) as read:
+            first=self.w.health();second=self.w.health()
+            self.assertEqual(read.call_count,1)
+            self.assertEqual(first['classification']['counts_as_of'],second['classification']['counts_as_of'])
+            fixture(self.db,4);read.return_value=statuses+[{'processing_status':'PENDING'}]
+            third=self.w.health();self.assertEqual(read.call_count,2)
+            self.assertEqual(third['nodes'],4)
+            self.assertEqual(sum(third['classification']['counts'].values()),4)
+
+    def test_heavy_read_busy_returns_bounded_retryable_error(self):
+        from unittest.mock import Mock
+        self.w.read_lock=Mock();self.w.read_lock.acquire.return_value=False
+        with self.assertRaises(WorkspaceError) as blocked:self.w.view({'kind':'LIBRARY'})
+        self.assertEqual(blocked.exception.code,'READ_BUSY');self.assertEqual(blocked.exception.status,503)
+        self.w.read_lock.acquire.assert_called_once_with(timeout=1)
+
+    def test_health_run_omits_content_but_preserves_source_errors(self):
+        report={'crawl_run_id':'test','status':'PARTIAL','jobs':[{'source_id':SOURCE,'status':'SKIPPED',
+            'inventory':{'status':'SKIPPED','error_code':'PROFILE_IN_USE','raw_text':'private caption'},
+            'threads':[{'raw_text':'private comment'}]}]}
+        compact=self.w._health_run(report)
+        self.assertNotIn('private',json.dumps(compact))
+        self.assertEqual(compact['jobs'][0]['inventory']['error_code'],'PROFILE_IN_USE')
+        self.assertEqual(compact['jobs'][0]['threads_attempted'],1)
+
     def test_ocr_detail_filter_keyword_and_full_excel_evidence(self):
         from src.storage.image_evidence import initialize,save
         raw=ConversationStore(self.db);node=raw.get(self.ids[0]);ref={'media_type':'IMAGE','url':'https://scontent.example.fbcdn.net/photo.jpg'}

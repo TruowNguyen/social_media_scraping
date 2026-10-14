@@ -51,8 +51,13 @@ def trace_thread(registry, raw, source_id, post_url, window, seconds=120, factor
             availability_status='UNAVAILABLE' if error.code in {'CONTENT_UNAVAILABLE','HTTP_404','SOURCE_NOT_FOUND'} else 'UNKNOWN'),
             source_id,run_id,lineage={'discovered_via':'BROWSER_THREAD','error_code':error.code})
         report.update(status=error.status,error_code=error.code,coverage={'status':'PARTIAL','stop_reason':error.code})
-    except Exception:
-        report.update(status='EXTRACTION_FAILED',error_code='THREAD_PARSER_FAILED',coverage={'status':'PARTIAL','stop_reason':'THREAD_PARSER_FAILED'})
+    except Exception as error:
+        import traceback
+        from pathlib import Path
+        frame=traceback.extract_tb(error.__traceback__)[-1]
+        report.update(status='EXTRACTION_FAILED',error_code='THREAD_PARSER_FAILED',error_type=type(error).__name__,
+            error_origin={'file':Path(frame.filename).name,'function':frame.name,'line':frame.lineno},
+            coverage={'status':'PARTIAL','stop_reason':'THREAD_PARSER_FAILED'})
     # Independent saved-raw filtering: parent intent never decides the children.
     nodes=[n for n in raw.list_nodes(source_id) if n['root_post_id']==root]
     for node in nodes:

@@ -1,5 +1,6 @@
 """Raw-first dashboard routing, independent child time, retention and review/export."""
 import tempfile
+import json
 import time
 import unittest
 from pathlib import Path
@@ -34,6 +35,86 @@ def ingest(raw):
 
 
 class DashboardRawTests(unittest.TestCase):
+    def test_source_failure_after_checkpoint_preserves_raw_progress_and_results(self):
+        import sqlite3
+        with tempfile.TemporaryDirectory() as folder:
+            db=Path(folder)/'raw.db';registry=Registry(CONFIG)
+            window=Window(parse_utc('2026-10-09T00:00:00Z'),parse_utc('2026-10-10T00:00:00Z'))
+            def failing(registry,raw,task,**options):
+                raw.ingest(ContentNode('POST',platform_item_id='new',canonical_url=POST+'4',
+                    raw_text='Kẹt cổng',published_at='2026-10-09T02:00:00Z',publication_precision='INSTANT'),SOURCE,'partial_inventory')
+                options['progress']('COMMENTS',dict(source_id=SOURCE,status='PARTIAL',inventory={'run_id':'partial_inventory'},threads=[]))
+                raise sqlite3.OperationalError('database is locked')
+            with patch('engine.dashboard_conversations.execute_task',failing):
+                run=crawl(registry,db,[SOURCE],window,'failed_after_raw',executor=failing)
+            self.assertEqual(run['status'],'PARTIAL');self.assertEqual(run['progress']['observed_nodes'],1)
+            self.assertEqual(run['jobs'][0]['error_type'],'OperationalError')
+            self.assertEqual(len(results(db,window,registry.sources,{},report=run)),1)
+
+    def test_slow_inventory_leaves_time_for_comments(self):
+        from engine.conversation_worker import execute_task
+        from engine.conversation_schedule import CrawlTasks
+        from unittest.mock import Mock
+        with tempfile.TemporaryDirectory() as folder:
+            raw=ConversationStore(Path(folder)/'raw.db');ingest(raw)
+            tasks=CrawlTasks(raw);post=next(n for n in raw.list_nodes() if n['node_type']=='POST')
+            tasks.add_post(SOURCE,post['node_id'],post['canonical_url'])
+            remaining=[120]
+            clock=Mock();clock.remaining.side_effect=lambda:remaining[0]
+            def inventory(*args,**options):
+                remaining[0]-=args[4] # Simulate consuming the entire listing allowance.
+                return {'run_id':'inventory-test','status':'SUCCESS'}
+            task=dict(task_id='test',source_id=SOURCE,inventory_only=False,window_start='2026-10-09T00:00:00Z',window_end='2026-10-10T00:00:00Z')
+            try:
+                with patch('engine.conversation_worker.Deadline',return_value=clock),patch('engine.conversation_worker.inventory_source',side_effect=inventory),patch('engine.conversation_worker.trace_thread',return_value={'status':'PARTIAL'}) as trace:
+                    result=execute_task(Registry(CONFIG),raw,task,seconds=120)
+                    trace.assert_called_once();self.assertGreater(trace.call_args.args[5],60)
+                    self.assertEqual(len(result['threads']),1)
+            finally:raw.close()
+
+    def test_run_progress_and_results_use_observations_not_source_history(self):
+        from src.storage.conversations import encode
+        with tempfile.TemporaryDirectory() as folder:
+            db=Path(folder)/'raw.db';registry=Registry(CONFIG)
+            raw=ConversationStore(db);ingest(raw);raw.close()
+            window=Window(parse_utc('2026-10-09T00:00:00Z'),parse_utc('2026-10-10T00:00:00Z'))
+            def executor(registry,raw,task,**options):
+                raw.ingest(ContentNode('POST',platform_item_id='new',canonical_url=POST+'4',
+                    raw_text='Kẹt cổng',published_at='2026-10-09T02:00:00Z',publication_precision='INSTANT'),SOURCE,'this_inventory')
+                return dict(source_id=SOURCE,status='PARTIAL',inventory={'run_id':'this_inventory'})
+            snapshots=[]
+            run=crawl(registry,db,[SOURCE],window,'this_run',executor,progress_callback=lambda r:snapshots.append(json.loads(encode(r))))
+            self.assertEqual([r['current_phase'] for r in snapshots],['INVENTORY','SOURCE_FINISHED','FINISHED'])
+            self.assertEqual(run['progress']['completed_sources'],1)
+            self.assertEqual(run['progress']['observed_nodes'],1)
+            self.assertEqual(run['progress']['confirmed_window_nodes'],1)
+            self.assertEqual(run['unresolved_time'],0) # Historical unknown reply belongs to another run.
+            rows=results(db,window,registry.sources,{},report=run)
+            self.assertEqual(len(rows),1);self.assertEqual(rows[0]['node_type'],'POST')
+            self.assertEqual(len(results(db,window,registry.sources,{})),2)
+
+    def test_running_job_publishes_progress_and_read_failure_keeps_it(self):
+        import threading
+        with tempfile.TemporaryDirectory() as folder:
+            service=SearchService(Path(folder)/'raw.db',CONFIG)
+            entered=threading.Event();release=threading.Event()
+            def blocked(*args,progress_callback,**options):
+                report=dict(crawl_run_id=args[4],status='PARTIAL',jobs=[{'source_id':SOURCE,'threads':[{'error_code':'NAVIGATION_TIMEOUT'}]}],unresolved_time=2,
+                    updated_at='2026-10-09T01:00:00Z',current_source=SOURCE,current_phase='COMMENTS',
+                    progress={'completed_sources':0,'observed_nodes':3,'unknown_time_nodes':2})
+                progress_callback(report);entered.set();release.wait(3);return report
+            try:
+                with patch('engine.dashboard_conversations.crawl',side_effect=blocked),patch('engine.dashboard_conversations.results',side_effect=RuntimeError('read unavailable')):
+                    job=service.start({'start_date':'2026-10-09','end_date':'2026-10-09'},'CRAWL')
+                    self.assertTrue(entered.wait(2));running=service.get(job['job_id'])
+                    self.assertEqual(running['status'],'RUNNING');self.assertEqual(running['progress']['observed_nodes'],3)
+                    self.assertEqual(running['warnings'],['NAVIGATION_TIMEOUT'])
+                    release.set();deadline=time.monotonic()+3
+                    while service.running and time.monotonic()<deadline:time.sleep(.01)
+                    failed=service.get(job['job_id']);self.assertEqual(failed['status'],'FAILED')
+                    self.assertEqual(failed['progress']['observed_nodes'],3);self.assertIn('CRAWL_FAILED',failed['warnings'])
+            finally:release.set();service.close()
+
     def test_resume_keeps_job_identity_across_more_than_cache_limit_retries(self):
         with tempfile.TemporaryDirectory() as folder:
             service=SearchService(Path(folder)/'raw.db',CONFIG)

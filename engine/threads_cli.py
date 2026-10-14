@@ -12,6 +12,7 @@ from src.acquisition.browser import browser_job
 from src.acquisition.threads import ThreadsBrowserAdapter,ThreadsAPIAdapter
 from src.config.env import env_str
 from src.storage.conversations import ConversationStore
+from src.acquisition.projects import load_projects
 
 
 def main(argv=None):
@@ -38,7 +39,7 @@ def main(argv=None):
         end=parse_utc(args.end) if args.end else datetime.now(timezone.utc)
         start=parse_utc(args.start) if args.start else end-timedelta(days=14)
         run_id='threads_pilot_'+uuid.uuid4().hex
-        report=crawl(args.database,config,[query],Window(start,end),run_id,args.scope)
+        report=crawl(args.database,config,[query],Window(start,end),run_id,args.scope,projects=load_projects(args.config_dir))
         report.update(trigger='CLI',project_id=query['project_id'])
         raw=ConversationStore(args.database,initialize=False)
         try:

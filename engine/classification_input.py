@@ -10,20 +10,47 @@ from src.analysis.content_intents import filter_saved_payload,RULE_VERSION,POLIC
 PROMPT_VERSION = 'conversation-classification-v2.2-intents'
 
 
-def build_item(raw, node_id, source_id, snapshot):
-    node=raw.get(node_id)
+def evidence_payload(item):
+    """Classification evidence, independent of raw storage revision counters.
+
+    Keep identities, text, roles, project/query scope and OCR evidence/quality.
+    Raw revisions also track availability and extraction metadata which are not
+    model evidence. Never modify the persisted input or its provenance.
+    """
+    result={k:v for k,v in item.items() if k!='revision_id'}
+    for key in ('context','image_evidence'):
+        if key in result:
+            result[key]=[{k:v for k,v in entry.items() if k!='revision_id'} for entry in result[key]]
+    return result
+
+
+def input_is_current(raw,item,snapshot,*,nodes=None,images=None,cache=None):
+    key=(item['item_id'],item['source_id'])
+    try:
+        if cache is not None and key in cache:current=cache[key]
+        else:
+            current=evidence_payload(build_item(raw,*key,snapshot,nodes=nodes,images=images))
+            if cache is not None:cache[key]=current
+    except ValueError:return False
+    return current==evidence_payload(item)
+
+
+def build_item(raw, node_id, source_id, snapshot, *, nodes=None, images=None):
+    def get(nid):return nodes.get(nid) if nodes is not None else raw.get(nid)
+    node=get(node_id)
     if not node: raise ValueError('Stored target required')
     if not raw.db.execute('SELECT 1 FROM node_sources WHERE node_id=? AND source_id=?',(node_id,source_id)).fetchone():
         raise ValueError('Source occurrence required')
     target={'text':node['raw_text'],'evidence_id':'target:'+node_id}
     from src.storage.image_evidence import bindings
-    image_evidence=[dict(e,item_id=node_id,revision_id=node['revision_id'],role='TARGET') for e in bindings(raw,node_id)]
+    def image_bindings(nid):return images.get(nid,[]) if images is not None else bindings(raw,nid)
+    image_evidence=[dict(e,item_id=node_id,revision_id=node['revision_id'],role='TARGET') for e in image_bindings(node_id)]
     context=[]
     for origin_id,role in ((node['root_post_id'],'ROOT_POST'),(node['parent_node_id'],'PARENT_COMMENT')):
         if not origin_id or origin_id==node_id or any(c['item_id']==origin_id for c in context): continue
-        parent=raw.get(origin_id)
+        parent=get(origin_id)
         if not parent: continue
-        parent_images=bindings(raw,origin_id)
+        parent_images=image_bindings(origin_id)
         image_evidence.extend(dict(e,item_id=origin_id,revision_id=parent['revision_id'],role=role) for e in parent_images)
         if parent['raw_text'] is None and not parent_images: continue
         context.append(dict(item_id=origin_id,revision_id=parent['revision_id'],role=role,
@@ -37,7 +64,7 @@ def build_item(raw, node_id, source_id, snapshot):
             if obs.get('project_scope_id') and obs.get('query_id'):
                 query_context={'project_id':obs['project_scope_id'],'query_id':obs['query_id'],'query_version':obs.get('query_version',1)};break
     for project_id,profile in snapshot['profiles'].items():
-        aliases={'vincons':['VinCons'],'vinwonders_vu_yen':['VinWonders Vũ Yên','VinWonder Vũ Yên','Vin Wonders Vũ Yên','Vin Wonder Vũ Yên']}.get(project_id,[profile['name']])
+        aliases={'vincons':['VinCons','Vin Cons'],'vinwonders_vu_yen':['VinWonders Vũ Yên','VinWonder Vũ Yên','Vin Wonders Vũ Yên','Vin Wonder Vũ Yên']}.get(project_id,[profile['name']])
         def mentions(text):
             return any(re.search(r'(?<!\w)'+re.escape(alias)+r'(?!\w)',text or '',re.I) for alias in aliases)
         explicit=[e['evidence_id'] for e in image_evidence if e['role']=='TARGET' and mentions(e['text'])]

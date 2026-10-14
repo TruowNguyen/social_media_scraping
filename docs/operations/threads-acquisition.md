@@ -1,5 +1,7 @@
 # Vận hành thu thập Threads
 
+**Cập nhật VinCons 13/10:** parser v5 xác minh query/vùng search, scope gate sau commit raw, bảy query VinCons và giới hạn hội thoại thiếu evidence. Các kết quả v4 bên dưới là lịch sử; xem [đối chiếu hiện hành](threads-vincons-scope-20261013.md). Lịch thực đọc từ backend; tự khởi động/chạy bù hiện theo [local runtime](local-runtime-recovery.md).
+
 Cập nhật **12/10/2026 · IMPLEMENTED / OFFLINE_VERIFIED / LIVE_PARTIAL**. Pilot dùng **Playwright Python + Chrome**, profile riêng `sessions/browser/threads`. Không dùng Threads API trong các kết quả live bên dưới. Đã áp dụng [Impeccable](../../.agents/skills/impeccable/SKILL.md) để mở rộng giao diện hiện có, kiểm chứng trực tiếp và không dùng agent phụ.
 
 ## Luồng đã chạy

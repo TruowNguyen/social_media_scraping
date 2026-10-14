@@ -12,13 +12,24 @@ from http.server import ThreadingHTTPServer
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
-from engine.dashboard import snapshot, search_input, date_window, result_row, search_output, SearchService, SearchAlreadyRunning, make_handler
+from engine.dashboard import snapshot, search_input, date_window, result_row, search_output, SearchService, SearchAlreadyRunning, make_handler, DashboardHTTPServer
 from src.storage.acquisition import AcquisitionStore
 from src.browser.profiles import PROJECT_ROOT
 from src.acquisition.models import Window, parse_utc
 
 
 class DashboardTests(unittest.TestCase):
+    def test_duplicate_port_fails_before_starting_services(self):
+        from engine.dashboard import main
+        from contextlib import redirect_stderr
+        from io import StringIO
+        server=DashboardHTTPServer(('127.0.0.1',0),object)
+        try:
+            with patch('sys.argv',['dashboard','--port',str(server.server_port)]),patch('engine.dashboard.make_handler') as handler,redirect_stderr(StringIO()):
+                with self.assertRaises(SystemExit) as failed:main()
+                self.assertEqual(failed.exception.code,2);handler.assert_not_called()
+        finally:server.server_close()
+
     def test_snapshot_rechecks_records_and_queue_against_current_filter(self):
         from src.acquisition.models import Candidate
         with tempfile.TemporaryDirectory() as directory:
@@ -122,7 +133,7 @@ class DashboardTests(unittest.TestCase):
         registry = Registry(PROJECT_ROOT / "config")
         registry.sources["google_social_vincons"]["enabled"] = False
         captured, called = {}, threading.Event()
-        def fake_crawl(registry, database, sources, window, run_id):
+        def fake_crawl(registry, database, sources, window, run_id, **options):
             captured.update(sources=sources, window=window)
             called.set()
             return dict(status="PARTIAL", crawl_run_id="fake_crawl", jobs=[],unresolved_time=0)

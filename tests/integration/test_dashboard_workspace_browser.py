@@ -15,6 +15,61 @@ ROOT=Path(__file__).resolve().parents[2]
 
 @unittest.skipUnless(os.environ.get('ACQUISITION_BROWSER_TESTS')=='1','Opt-in Chromium')
 class WorkspaceBrowserTests(unittest.TestCase):
+    def test_facebook_progress_survives_slow_health_and_reconnect(self):
+        from playwright.sync_api import sync_playwright,expect
+        from engine.dashboard_workspace import Workspace
+        prepare_browser_path()
+        with tempfile.TemporaryDirectory() as folder:
+            db=Path(folder)/'db.sqlite3';fixture(db,3)
+            service=SearchService(db,ROOT/'config',enable_scheduler=False)
+            server=ThreadingHTTPServer(('127.0.0.1',0),make_handler(db,ROOT/'config',service=service))
+            thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+            original=Workspace.health
+            try:
+                with patch('engine.classification_service.GeminiGateway') as gateway,patch('engine.dashboard.AcquisitionEngine') as acquisition:
+                    with sync_playwright() as p:
+                        browser=p.chromium.launch(headless=True)
+                        for width in (1440,390):
+                            job=dict(job_id='facebook-running',mode='CRAWL',status='RUNNING',rows=[],warnings=[],source_count=7,
+                                window_start='2026-10-09T00:00:00Z',window_end='2026-10-10T00:00:00Z',
+                                current_phase='COMMENTS',current_source_name='Hội công nhân VinCons',updated_at='2026-10-09T01:00:00Z',
+                                progress=dict(total_sources=7,completed_sources=1,observed_nodes=3,posts=1,comments=2,replies=0,confirmed_window_nodes=2,unknown_time_nodes=1))
+                            service.jobs={job['job_id']:job};service.running=True
+                            entered=threading.Event();release=threading.Event()
+                            def delayed(workspace,**options):entered.set();release.wait(12);return original(workspace,**options)
+                            page=browser.new_page(viewport={'width':width,'height':1000});errors=[]
+                            page.on('pageerror',lambda e:errors.append(str(e)))
+                            with patch.object(Workspace,'health',delayed):
+                                try:
+                                    page.goto(f'http://127.0.0.1:{server.server_port}/?tab=CRAWL')
+                                    self.assertTrue(entered.wait(2))
+                                    expect(page.locator('#job-state')).to_contain_text('Đang đọc bài và bình luận',timeout=3000)
+                                    expect(page.locator('#job-rows')).to_contain_text('2 bình luận')
+                                    expect(page.locator('#crawl-form button[type=submit]')).to_be_disabled()
+                                    job['progress']={**job['progress'],'comments':4,'observed_nodes':5}
+                                    # The independent timer updates while health is still waiting.
+                                    expect(page.locator('#job-rows')).to_contain_text('4 bình luận',timeout=7000)
+                                finally:release.set()
+                            expect(page.locator('#health-strip')).to_contain_text('Lịch Facebook:')
+                            page.route('**/api/jobs/facebook-running',lambda route:route.fulfill(status=503,content_type='application/json',body='{"error":"busy"}'))
+                            page.locator('#job-refresh').click()
+                            expect(page.locator('#job-state')).to_contain_text('Sẽ tự kết nối lại')
+                            self.assertEqual(page.evaluate('state.job'),'facebook-running')
+                            expect(page.locator('#job-rows')).to_contain_text('4 bình luận')
+                            page.unroute('**/api/jobs/facebook-running');page.locator('#job-refresh').click()
+                            expect(page.locator('#job-state')).to_contain_text('Đang đọc bài và bình luận')
+                            page.route('**/api/health*',lambda route:route.fulfill(status=503,content_type='application/json',body='{"error":"busy"}'))
+                            page.evaluate('refreshHealth()');expect(page.locator('#health-strip')).to_contain_text('Lịch Facebook:')
+                            self.assertLessEqual(page.evaluate('document.documentElement.scrollWidth'),width)
+                            (ROOT/'reports').mkdir(exist_ok=True)
+                            page.screenshot(path=str(ROOT/'reports'/f'facebook-direct-progress-{width}.png'),full_page=True)
+                            job['status']='PARTIAL';page.locator('#job-refresh').click()
+                            expect(page.locator('#job-state')).to_contain_text('Lượt đã kết thúc')
+                            expect(page.locator('#crawl-form button[type=submit]')).to_be_enabled()
+                            self.assertEqual(errors,[]);page.close()
+                        gateway.assert_not_called();acquisition.assert_not_called();browser.close()
+            finally:server.shutdown();server.server_close();service.running=False;service.close();thread.join()
+
     def test_missing_job_stops_polling_reconnects_and_preserves_saved_view(self):
         from playwright.sync_api import sync_playwright,expect
         prepare_browser_path()
@@ -38,6 +93,10 @@ class WorkspaceBrowserTests(unittest.TestCase):
                                     page.goto(f'http://127.0.0.1:{server.server_port}/?tab=LIBRARY')
                                     expect(page.locator('#health-strip')).to_contain_text('Lịch Facebook:')
                                     expect(page.locator('#applied-scope')).to_contain_text('3 nội dung')
+                                    before=sum('/api/views?' in url for url in requests)
+                                    page.evaluate('checkNewData()')
+                                    self.assertTrue(any(url.endswith('/api/views/version') for url in requests))
+                                    self.assertEqual(sum('/api/views?' in url for url in requests),before)
                                     page.evaluate('pollJob()')
                                     self.assertIsNone(page.evaluate('state.job'))
                                     for _ in range(2):page.evaluate('refreshHealth().then(pollJob)')
@@ -129,8 +188,8 @@ class WorkspaceBrowserTests(unittest.TestCase):
                         # let the old restore overwrite the newly selected filter.
                         from engine.dashboard_workspace import Workspace
                         entered=threading.Event();release=threading.Event();original=Workspace.health
-                        def delayed_health(workspace):
-                            entered.set();release.wait(10);return original(workspace)
+                        def delayed_health(workspace,**options):
+                            entered.set();release.wait(10);return original(workspace,**options)
                         page.set_viewport_size({'width':1440,'height':1000})
                         with patch.object(Workspace,'health',delayed_health):
                             try:

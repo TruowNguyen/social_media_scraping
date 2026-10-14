@@ -18,6 +18,38 @@ def review_response(request):
 
 
 class JobTests(unittest.TestCase):
+    def test_hashing_inputs_does_not_hold_database_writer_lock(self):
+        import sqlite3
+        from unittest.mock import patch
+        from engine.classification_jobs import job_key
+        def check(*args):
+            other=sqlite3.connect(self.raw.path,timeout=0)
+            try:other.execute('BEGIN IMMEDIATE');other.rollback()
+            finally:other.close()
+            return job_key(*args)
+        with patch('engine.classification_jobs.job_key',side_effect=check):
+            self.jobs.enqueue(self.items,self.snapshot,'model')
+            self.assertEqual(len(self.jobs.claim(self.snapshot,'model',NOW)),2)
+
+    def test_two_workers_cannot_claim_same_item_after_parallel_reads(self):
+        import threading
+        from unittest.mock import patch
+        from engine.classification_jobs import job_key
+        self.jobs.enqueue(self.items[:1],self.snapshot,'model')
+        barrier=threading.Barrier(2);results=[];errors=[]
+        def key(*args):
+            value=job_key(*args);barrier.wait(timeout=3);return value
+        def worker():
+            raw=ConversationStore(self.raw.path,initialize=False)
+            try:results.append(ClassificationJobs(raw,initialize=False).claim(self.snapshot,'model',NOW,limit=1))
+            except Exception as error:errors.append(error)
+            finally:raw.close()
+        with patch('engine.classification_jobs.job_key',side_effect=key):
+            threads=[threading.Thread(target=worker) for _ in range(2)]
+            for thread in threads:thread.start()
+            for thread in threads:thread.join(5)
+        self.assertEqual(errors,[]);self.assertEqual(sorted(len(r) for r in results),[0,1])
+
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.raw=ConversationStore(Path(self.tmp.name)/'raw.db')
         self.snapshot=load_snapshot(ROOT/'specs/taxonomy/v1')

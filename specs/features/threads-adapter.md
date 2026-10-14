@@ -2,6 +2,8 @@
 
 **IMPLEMENTED_SUBSET / LIVE_PARTIAL · 12/10/2026**. Nền tảng Threads của Meta, khác “thread hội thoại” trong Facebook. [Runbook + evidence](../../docs/operations/threads-acquisition.md), [task status](../../TODO.MD), [plan/gates](../../docs/implementation-plan-threads.md), [contract](../contracts/multi-platform-conversations.md). Browser/raw/classifier/UI/lịch đã triển khai; API, nested mapping, OCR và full coverage chưa nghiệm thu. Không dùng prefilter-before-persist acquisition v1 cho tính năng raw này.
 
+**Bổ sung 13/10/2026 — IMPLEMENTED / LIVE_PARTIAL:** kiểm tra scope VinCons sau persist, parser v5 và query theo vấn đề. [Runbook/acceptance](../../docs/operations/threads-vincons-scope-20261013.md) phân biệt raw, alias evidence và phản ánh. Hai hội thoại thiếu evidence/query là mặc định; việc hoãn làm coverage partial, không xóa raw hoặc suy DROP.
+
 Thiết kế: [adapter flow](../../docs/design/threads-adapter-flow.md), [workspace UX](../../docs/design/threads-workspace-ux.md). Tab Thu thập đã chọn Facebook/Threads; THR-UX01–09 đối chiếu backend/THR-AC, kết quả thực thi ở runbook.
 
 ## Phạm vi v1
@@ -34,6 +36,11 @@ Các yêu cầu dưới đây là mở rộng theo yêu cầu người dùng, kh
 | THR-016 | Backend/UI/Excel filter platform/project/query/time/type, nguồn search khác group | FR-13/14/16 |
 | THR-017 | Media refs/alt text, optional POST OCR, quote/repost relation riêng | FR-07/11 |
 | THR-018 | Offline regression + live đối chứng + 3 ngày vận hành; evidence trước ACP | FR-04/16/17 |
+| THR-019 | Browser xác minh URL/ô query, chỉ nhận card hiển thị trong vùng search; mismatch/selector drift không báo thành công rỗng | FR-04/16 |
+| THR-020 | Scope alias từ project registry sau commit raw; query không chứng minh entity. Hoãn hội thoại không có evidence; quota riêng cho thiếu caption/media | FR-02/06/16 |
+| THR-021 | Rescan bài cũ đúng dự án hoặc có child evidence; không bắt issue keyword trong root. Chỉ fetch thành công một lần/run, giữ observations từng query | FR-04/05/12 |
+
+THR-019–021 đã kiểm thử trong `tests/integration/test_threads_parser.py` và `tests/contract/test_threads_scope.py`; bộ hồi quy 109 tests đạt. Scope observation bổ sung `entity_scope={version,project_id,status,matched_aliases,conversation_eligible}`; run/job bổ sung query verification/parser và scope counters. Các trường này phục vụ acquisition, không thay taxonomy/schema kết quả model. Pilot scheduler dùng provider browser và vẫn PARTIAL; source/project identity, nested parent và toàn bộ phản ánh chưa được suy từ counters.
 
 ## Interface đề xuất
 

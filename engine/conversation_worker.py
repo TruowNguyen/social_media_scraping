@@ -24,7 +24,7 @@ def inventory_source(registry, raw, source_id, window, seconds=120, max_candidat
         coverage={'status':'PARTIAL','stop_reason':batch.stop_reason,'full_group_inventory_verified':False})
 
 
-def execute_task(registry,raw,task,seconds=1200,max_threads=20,factory=adapter_job,ocr_budget=None):
+def execute_task(registry,raw,task,seconds=1200,max_threads=20,factory=adapter_job,ocr_budget=None,progress=None):
     from datetime import timedelta
     if not 0 < seconds <= 1200 or not 0 < max_threads <= 200:
         raise ValueError('Invalid run limits')
@@ -39,14 +39,17 @@ def execute_task(registry,raw,task,seconds=1200,max_threads=20,factory=adapter_j
     from engine.image_enrichment import OCRBudget
     ocr_budget=ocr_budget or OCRBudget()
     try:
-        result['inventory']=inventory_source(registry,raw,task['source_id'],window,min(120,budget.remaining()),factory=factory)
+        # A short source job must retain time for permalink text and comments.
+        inventory_seconds=min(120,budget.remaining() if task['inventory_only'] else budget.remaining()*.45)
+        result['inventory']=inventory_source(registry,raw,task['source_id'],window,inventory_seconds,factory=factory)
     except AdapterError as error:
         result['inventory']={'status':error.status,'error_code':error.code}
-    except Exception:
-        result['inventory']={'status':'EXTRACTION_FAILED','error_code':'INVENTORY_FAILED'}
+    except Exception as error:
+        result['inventory']={'status':'EXTRACTION_FAILED','error_code':'INVENTORY_FAILED','error_type':type(error).__name__}
     if task['inventory_only']: return result
     # A failing discovery doesn't erase the inventory. Access blockers stop this source.
     inventory=result['inventory']
+    if progress: progress('COMMENTS',result)
     if inventory['status'] in {'AUTH_REQUIRED','ACCESS_DENIED','RATE_LIMITED','SKIPPED'}:
         result['status']=inventory['status']; return result
     for post in tasks.fair_posts(task['source_id'],max_threads):
@@ -54,6 +57,7 @@ def execute_task(registry,raw,task,seconds=1200,max_threads=20,factory=adapter_j
         outcome=trace_thread(registry,raw,task['source_id'],post['post_url'],window,min(120,budget.remaining()),factory,ocr_budget)
         tasks.scanned(task['source_id'],post['node_id'],outcome,utcnow())
         result['threads'].append(outcome)
+        if progress: progress('COMMENTS',result)
         if outcome.get('error_code')=='PROFILE_IN_USE':
             result.update(status='SKIPPED',error_code='PROFILE_IN_USE')
             return result

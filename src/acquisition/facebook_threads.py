@@ -147,6 +147,11 @@ def save_comment_batch(store, rows, root_node_id, post_url, source_id, run_id, t
         while pending:
             progressed = False
             for row in pending[:]:
+                known=store.db.execute('SELECT node_id FROM node_aliases WHERE alias=?',
+                    ('FACEBOOK:COMMENT:native:'+row['native_id'],)).fetchone()
+                known=store.get(known[0]) if known else None
+                if known and known['root_post_id']!=root_node_id:
+                    raise AdapterError('EXTRACTION_FAILED','COMMENT_THREAD_CONFLICT')
                 parent_native = row['parent_native_id']
                 parent_id = root_node_id
                 if parent_native:
@@ -163,11 +168,19 @@ def save_comment_batch(store, rows, root_node_id, post_url, source_id, run_id, t
                             root_post_id=root_node_id,parent_node_id=root_node_id,relationship_status='UNRESOLVED',
                             extraction_status='REFERENCE_ONLY',availability_status='UNKNOWN'),source_id,run_id)
                 fields = {key:row.get(key) for key in ('canonical_url','raw_text','published_at','publication_precision','timestamp_raw','author_uid','author_name','author_url')}
-                node = ContentNode(row['node_type'], platform_item_id=row['native_id'],root_post_id=root_node_id,parent_node_id=parent_id,
+                node_type=row['node_type']
+                restored_parent=bool(known and known['node_type']=='REPLY' and not parent_native)
+                if restored_parent:
+                    # Hydration/flat views can omit a reply's parent. Missing
+                    # evidence must not demote an already verified reply.
+                    node_type='REPLY';parent_id=known['parent_node_id'];fields['canonical_url']=known['canonical_url']
+                if known and not restored_parent and known['relationship_status']=='RESOLVED' and known['parent_node_id']!=parent_id:
+                    raise AdapterError('EXTRACTION_FAILED','COMMENT_PARENT_CONFLICT')
+                node = ContentNode(node_type, platform_item_id=row['native_id'],root_post_id=root_node_id,parent_node_id=parent_id,
                     extraction_status='COMPLETE' if row['raw_text'] is not None else 'PARTIAL',
                     display_url=post_url if not fields['canonical_url'] else None,url_type='PARENT_FALLBACK' if not fields['canonical_url'] else None,
                     missing_fields=[key for key in ('raw_text','published_at') if row.get(key) is None],**fields)
-                result = store.ingest(node,source_id,run_id,lineage={'parser_version':row['parser']})
+                result = store.ingest(node,source_id,run_id,lineage={'parser_version':row['parser'],'parent_restored_from_saved_identity':restored_parent})
                 saved[row['native_id']] = result['node_id']
                 pending.remove(row); progressed = True
             if not progressed:

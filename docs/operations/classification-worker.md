@@ -32,6 +32,8 @@ API timeout 45 giây; tối đa 3 attempts/job với backoff 30/60 giây; auth/c
 
 ## Chuyển model và giữ kết quả — 11/10/2026
 
+**Cập nhật 14/10/2026:** metadata-only revision không còn khiến mất kết quả accepted hoặc gọi model lại khi caption/context/OCR và binding phân loại không đổi. Queue so bằng chứng riêng với revision lưu trữ, giữ provenance thật; dashboard ưu tiên accepted còn hợp lệ thay vì PENDING trùng. Worker vẫn đối soát toàn kho local. [Chẩn đoán, bản sửa và nghiệm thu 18 → 17 → 18](classification-keep-count-20261014.md).
+
 Đối soát tự động giữ kết quả DONE đã được chấp nhận khi target, context, OCR, taxonomy, prompt và rule binding vẫn khớp, dù model mặc định thay đổi. Kết quả giữ nguyên model thực tế đã tạo ra nó; không sao chép hoặc đổi tên model trong provenance. Thay đổi đầu vào hoặc binding vẫn tạo job mới. Các đầu vào chưa có kết quả hợp lệ được đưa vào hàng chờ của model mới; các job/model cũ vẫn giữ lịch sử. `enqueue` trực tiếp vẫn tạo binding riêng nếu chủ động làm thử nghiệm so sánh model.
 
 Đã sao lưu tại `sessions/backups/model-switch-20261011.sqlite3`. Đối soát giữ 961 kết quả hợp lệ, tạo 1.539 job mới; 306 nội dung thiếu text/OCR và 163 nội dung bị bộ lọc loại không được gửi model. Đây là số liệu tại thời điểm đối soát, không phải tổng số phản ánh.
@@ -82,3 +84,6 @@ Gateway yêu cầu phần giải thích của model (drop_reason, review_reason,
 Cập nhật bộ lọc v3 ngày 11/10: `reason_vi` giữ lý do tiếng Việt có dấu thực tế từ model, dùng fallback nhãn tiếng Việt cho lịch sử tiếng Anh. Provider/validator phân biệt OCR target và context. 2.254 DONE được giữ, 416 đầu vào được đưa vào hàng chờ mới và 22 nội dung chuyển sang FILTER_DROP; đây là snapshot đối soát trước pilot, không phải trạng thái hàng chờ hiện tại. Worker đang chạy liên tục với log `reports/filter-policy-v3-worker.out.log` / `.err.log`, report `reports/filter-policy-v3-worker-latest.json`. [Runbook và kiểm chứng v3](filter-policy-v3-20261011.md).
 
 Lượt v3/v3.1 đã hoàn tất: 2.674 DONE, 184 FILTER_DROP, 111 MISSING_TEXT; không chờ/lỗi hiện hành. V3.1 siết ngoại lệ OCR context cho đúng một case nhắc bảng giá, giữ 2.673 DONE khác. Worker ACTIVE, scheduler thread sống; cycle không có đầu vào mới gọi 0 API. Các số liệu 2.692 DONE hoặc worker STOPPED phía trên là snapshot lịch sử trước bản sửa filter.
+# Vận hành local từ 13/10/2026
+
+[Supervisor local](local-runtime-recovery.md) đã bổ sung để tự khởi động/nhận quản lý dashboard và classifier độc lập khi đăng nhập Windows, thay worker đã kết thúc và đối soát ca bỏ lỡ. Các ghi chú “chưa đăng ký tự khởi động” trong bằng chứng ngày 09–11/10 bên dưới là trạng thái lịch sử tại thời điểm kiểm tra. Task `SocialListeningRuntime` đã được đăng ký và chạy thật ngày 13/10; chưa thử reboot/logoff máy người dùng. Máy tắt/ngủ không xử lý được, mở lại tiếp tục hàng chờ và giữ DONE hợp lệ.

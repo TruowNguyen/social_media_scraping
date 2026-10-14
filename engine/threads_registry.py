@@ -37,6 +37,8 @@ class ThreadsRegistry:
         for key,(low,high) in bounds.items():
             value=data.get('limits',{}).get(key)
             if type(value) is not int or not low<=value<=high:raise ValueError('Invalid Threads budget')
+        value=data.get('limits',{}).get('unverified_conversations_per_query',2)
+        if type(value) is not int or not 0<=value<=20:raise ValueError('Invalid unverified conversation budget')
 
     def write(self,data,expected_version):
         with file_lock(self.directory/'.threads.lock'):self._write(data,expected_version)

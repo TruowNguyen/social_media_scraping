@@ -5,7 +5,7 @@ from pathlib import Path
 import time
 import sys
 from functools import lru_cache
-from engine.classification_input import prepare_saved,job_key
+from engine.classification_input import prepare_saved,job_key,input_is_current
 from engine.classification_jobs import ClassificationJobs,process_jobs
 from src.analysis.taxonomy import load_snapshot,require_runtime_ready
 from src.analysis.gemini_gateway import GeminiGateway
@@ -67,7 +67,7 @@ def _read_binding(encoded):
     return json.loads(encoded),encoded
 
 
-@lru_cache(maxsize=2048)
+@lru_cache(maxsize=8192)
 def _read_job(payload,binding_text,prompt_version,rule_version):
     item=json.loads(payload);binding,_=_read_binding(binding_text)
     return item,job_key(item,binding['taxonomy'],binding['model'])
@@ -77,29 +77,40 @@ def classification_rows(raw,snapshot):
     queue=ClassificationJobs(raw,initialize=False)
     nodes=raw.list_nodes()
     by_id={n['node_id']:n for n in nodes}
-    from src.storage.image_evidence import all_bindings,input_current
+    from src.storage.image_evidence import all_bindings
     images=all_bindings(raw,nodes)
-    jobs_by_node={}
+    current_by_node={};history_nodes=set()
     tables={r[0] for r in raw.db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-    for job in raw.db.execute('SELECT * FROM classification_jobs ORDER BY rowid DESC') if 'classification_jobs' in tables else []:
-        jobs_by_node.setdefault(job['node_id'],[]).append(job)
     analyses={r[0]:json.loads(r[1]) for r in raw.db.execute('SELECT job_id,payload FROM node_analyses')} if 'node_analyses' in tables else {}
     validated={r[0]:r[1] for r in raw.db.execute('SELECT job_id,validated_at FROM node_analyses')} if 'node_analyses' in tables else {}
     sources_by_node={}
     for row in raw.db.execute('SELECT node_id,source_id FROM node_sources'):
         sources_by_node.setdefault(row[0],[]).append(row[1])
     filters_by_revision={(r[0],r[1]):json.loads(r[2]) for r in raw.db.execute('SELECT node_id,revision_id,payload FROM raw_filter_decisions ORDER BY rowid')}
+    evidence_cache={}
     def is_current(item):
-        return all(by_id.get(n['item_id'],{}).get('revision_id')==n['revision_id'] for n in [item,*item['context']]) and input_current(raw,item,by_id,images)
+        return input_is_current(raw,item,snapshot,nodes=by_id,images=images,cache=evidence_cache)
     rows=[]
     def valid(job):
         binding,text=_read_binding(job['binding'])
         if binding['taxonomy']!=snapshot:return False
         item,key=_read_job(job['payload'],text,PROMPT_VERSION,RULE_VERSION)
         return is_current(item) and job['job_id']==key
+    # Stream history, retaining only the latest valid job's small status fields.
+    # Keeping every SQLite row retained a full taxonomy binding per historical
+    # job, multiplied again by concurrent dashboard reads.
+    for job in raw.db.execute('SELECT job_id,node_id,binding,payload,status,error_code,attempts,next_attempt_at FROM classification_jobs ORDER BY rowid DESC') if 'classification_jobs' in tables else []:
+        node_id=job['node_id'];history_nodes.add(node_id)
+        if node_id not in by_id:continue
+        selected=current_by_node.get(node_id)
+        # A pending metadata duplicate must not hide a still-valid accepted
+        # result. Newest valid accepted result wins; historical results remain.
+        if selected and (selected['status']=='DONE' or job['status']!='DONE'):continue
+        if valid(job):
+            current_by_node[node_id]={key:job[key] for key in ('job_id','status','error_code','attempts','next_attempt_at')}
+            current_by_node[node_id]['model_id']=_read_binding(job['binding'])[0]['model']
     for node in nodes:
-        jobs=jobs_by_node.get(node['node_id'],[])
-        current=next((job for job in jobs if valid(job)),None)
+        current=current_by_node.get(node['node_id'])
         analysis=None
         if current:
             analysis=analyses.get(current['job_id'])
@@ -108,7 +119,7 @@ def classification_rows(raw,snapshot):
         status=current['status'] if current else (
             'FILTER_DROP' if decision.get('prefilter_decision')=='DROP' else
             'MISSING_TEXT' if not (node['raw_text'] or '').strip() and not images.get(node['node_id']) else
-            'STALE' if jobs else 'UNCLASSIFIED')
+            'STALE' if node['node_id'] in history_nodes else 'UNCLASSIFIED')
         state_reason={
             'MISSING_TEXT':'Chưa có caption, nội dung bình luận hoặc chữ OCR để phân loại. Cần thu thập lại nội dung.',
             'STALE':'Nội dung, ngữ cảnh, OCR hoặc cấu hình đã thay đổi. Kết quả cũ vẫn được lưu; phiên bản hiện tại cần vào hàng chờ lại.',
@@ -130,7 +141,7 @@ def classification_rows(raw,snapshot):
             ocr_text='\n'.join(e['text'] for e in images.get(node['node_id'],[])),
             source_ids=sources,analysis=analysis,processing_status=status,
             filter_decision=decision,reason_vi=reason_vi(analysis,decision) if analysis or status=='FILTER_DROP' else state_reason,error_code=current['error_code'] if current else None,
-            job_id=current['job_id'] if current else None,model_id=_read_binding(current['binding'])[0]['model'] if current else None,
+            job_id=current['job_id'] if current else None,model_id=current['model_id'] if current else None,
             classified_at=validated.get(current['job_id']) if current else None,taxonomy_version=snapshot['catalog'].get('version',snapshot['catalog'].get('taxonomy_version')),
             attempts=current['attempts'] if current else None,next_attempt_at=current['next_attempt_at'] if current else None))
     return rows

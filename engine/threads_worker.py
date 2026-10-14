@@ -11,9 +11,13 @@ from src.acquisition.threads import ThreadsAPIAdapter,ThreadsBrowserAdapter,node
 from src.config.env import env_str
 from src.storage.conversations import ConversationStore,encode
 from src.storage.ingest import IngestQueue
+from src.acquisition.projects import load_projects
+from src.analysis.threads_scope import evaluate_scope,SCOPE_VERSION
+from src.storage.image_evidence import bindings
 
 
-def crawl(database,config,queries,window,run_id,scope='POSTS_AND_REPLIES',*,progress=None,cancel=None,adapter=None,lease=None):
+def crawl(database,config,queries,window,run_id,scope='POSTS_AND_REPLIES',*,progress=None,cancel=None,adapter=None,lease=None,projects=None):
+    projects=projects if projects is not None else load_projects(Path(__file__).resolve().parents[1]/'config')
     budget=Deadline(config['limits']['seconds_per_run']);cancel=cancel or threading.Event()
     spool=IngestQueue(Path(database).parent/'ingest'/Path(database).stem)
     raw=ConversationStore(database)
@@ -24,8 +28,8 @@ def crawl(database,config,queries,window,run_id,scope='POSTS_AND_REPLIES',*,prog
         task_kind='ACQUISITION' if window else 'INVENTORY_REFRESH',
         config_version=config['version'],query_snapshot=queries,storage_order='RAW_THEN_FILTER_CLASSIFY',
         jobs=[],counters={},coverage_limited=True,coverage_scope=['OBSERVED_SEARCH_RESULTS','KNOWN_CONVERSATIONS'],
-        full_window_coverage_verified=False)
-    counts=Counter();sequence=0;observed_nodes=set();created_nodes=set();request_budget={'used':0,'limit':100}
+        full_window_coverage_verified=False,entity_scope_version=SCOPE_VERSION)
+    counts=Counter();sequence=0;observed_nodes=set();created_nodes=set();fetched_nodes=set();request_budget={'used':0,'limit':100}
     def publish():
         report.update(counters=dict(counts),updated_at=utcnow())
         if progress:progress(report)
@@ -36,7 +40,8 @@ def crawl(database,config,queries,window,run_id,scope='POSTS_AND_REPLIES',*,prog
         lineage={'query_id':query['query_id'],'query_version':query['version'],'query_type':query['type'],
             'search_keyword':query['value'],'project_scope_id':query['project_id'],'discovered_via':kind,
             'provider_method':config['provider'],'window_start':report['window_start'],'window_end':report['window_end']}
-        entries=[dict(node=n.payload(),source_id=query['query_id'],run_id=run_id,observed_at=stamp,lineage=lineage) for n in nodes]
+        entries=[dict(node=n.payload(),source_id=query['query_id'],run_id=run_id,observed_at=stamp,
+            lineage={**lineage,'entity_scope':evaluate_scope(n.payload(),query['project_id'],projects)}) for n in nodes]
         path=spool.enqueue(entries,page_id=page_id,task_id=run_id+':'+query['query_id'],checkpoint={'page_id':page_id,'stage':kind},lease=lease)
         report['status']='DRAINING';publish()
         receipts=spool.drain(database,paths=[path])
@@ -51,7 +56,8 @@ def crawl(database,config,queries,window,run_id,scope='POSTS_AND_REPLIES',*,prog
         report['status']='COLLECTING';publish()
     for query in queries:
         if cancel.is_set() or budget.remaining()<1:break
-        outcome=dict(query_id=query['query_id'],status='RUNNING',observed=0,gaps=[]);report['jobs'].append(outcome);publish()
+        outcome=dict(query_id=query['query_id'],status='RUNNING',observed=0,gaps=[],entity_scope_counts={});report['jobs'].append(outcome);publish()
+        unverified_fetched=0
         deadline=Deadline(min(config['limits']['seconds_per_query'],budget.remaining()))
         try:
             manager=browser_job('threads',deadline) if config['provider']=='THREADS_BROWSER' and adapter is None else nullcontext(None)
@@ -64,8 +70,13 @@ def crawl(database,config,queries,window,run_id,scope='POSTS_AND_REPLIES',*,prog
                     remaining=config['limits']['candidates_per_query']-len(candidates)
                     fresh=result['items'][:remaining];candidates.update({node_key(item):item for item in fresh})
                     outcome['observed']+=len(fresh);counts['observed_candidates']+=len(fresh)
+                    if result.get('query_verified'):outcome['query_verified']=True
+                    if result.get('parser_version'):outcome['parser_version']=result['parser_version']
                     discovered=[]
                     for item in fresh:
+                        entity=evaluate_scope(item,query['project_id'],projects)['status']
+                        outcome['entity_scope_counts'][entity]=outcome['entity_scope_counts'].get(entity,0)+1
+                        counts['observed_scope_'+entity.lower()]+=1
                         node=node_from_item(item,node_type='REPLY' if item.get('is_reply') else 'POST',
                             relationship='UNRESOLVED' if item.get('is_reply') or config['provider']=='THREADS_BROWSER' else 'RESOLVED')
                         discovered.append(node)
@@ -75,13 +86,25 @@ def crawl(database,config,queries,window,run_id,scope='POSTS_AND_REPLIES',*,prog
                 # Rescan oldest known roots, independent of root publication date.
                 raw=ConversationStore(database,initialize=False)
                 try:
-                    roots=[n for n in raw.list_nodes(query['query_id'],node_type='POST') if n['platform']=='THREADS']
+                    known_nodes=[n for n in raw.list_nodes(query['query_id']) if n['platform']=='THREADS']
+                    # A target mention in a saved reply can justify revisiting its
+                    # older root, even if that root has a neutral caption.
+                    child_roots={n['root_post_id'] for n in known_nodes if n.get('root_post_id') and
+                        evaluate_scope(n,query['project_id'],projects,evidence=bindings(raw,n['node_id']))['status']=='MATCHED'}
+                    roots=[]
+                    for n in known_nodes:
+                        if n['node_type']!='POST':continue
+                        scoped=evaluate_scope(n,query['project_id'],projects,evidence=bindings(raw,n['node_id']))
+                        if not scoped['conversation_eligible'] and n['node_id'] not in child_roots:
+                            counts['rescan_deferred_no_target_evidence']+=1;continue
+                        roots.append(n)
                     last_scan=dict(raw.db.execute('SELECT node_id,last_scanned_at FROM threads_inventory'))
                     roots.sort(key=lambda n:(last_scan.get(n['node_id'],''),n['first_seen_at'],n['node_id']))
                     counts['rescan_deferred']+=max(0,len(roots)-config['limits']['rescan_roots'])
                     for node in roots[:config['limits']['rescan_roots']]:
                         item={'id':node['platform_item_id'],'url':node['canonical_url'],'shortcode':node.get('platform_shortcode'),
-                              'timestamp':node['published_at'],'text':node['raw_text'],'username':node['author_name']}
+                              'timestamp':node['published_at'],'text':node['raw_text'],'username':node['author_name'],
+                              'media_refs':node['media_refs']}
                         if item['url']:candidates.setdefault(node_key(item),item)
                 finally:raw.close()
                 if scope=='POSTS_AND_REPLIES':
@@ -89,11 +112,26 @@ def crawl(database,config,queries,window,run_id,scope='POSTS_AND_REPLIES',*,prog
                         if cancel.is_set():break
                         deadline.check()
                         raw=ConversationStore(database,initialize=False)
-                        try:known=raw.get(node_key(item))
+                        try:
+                            known=raw.get(node_key(item))
+                            scoped=evaluate_scope(known or item,query['project_id'],projects,
+                                evidence=bindings(raw,known['node_id']) if known else ())
+                            from engine.image_enrichment import filter_node
+                            commercial=filter_node(raw,known) if known else None
                         finally:raw.close()
                         if known and known['node_type']!='POST':
                             counts['search_reply_candidates_seen']+=1;continue
+                        if commercial and commercial['prefilter_decision']=='DROP':
+                            counts['conversation_deferred_commercial']+=1;continue
+                        if not scoped['conversation_eligible'] and node_key(item) not in child_roots:
+                            counts['conversation_deferred_no_target_evidence']+=1;continue
+                        if node_key(item) in fetched_nodes:
+                            counts['conversation_reused_in_run']+=1;continue
+                        if scoped['status']=='MISSING_EVIDENCE' and unverified_fetched>=config['limits'].get('unverified_conversations_per_query',2):
+                            counts['conversation_deferred_missing_evidence']+=1
+                            outcome['gaps'].append('UNVERIFIED_CONVERSATION_LIMIT');continue
                         try:
+                            if scoped['status']=='MISSING_EVIDENCE':unverified_fetched+=1
                             detail=provider.fetch_item(item,{'scope':scope,'max_replies':config['limits']['replies_per_conversation'],
                                 'max_pages':config['limits']['pages_per_query']})
                             root=node_from_item(detail['root'],relationship='UNRESOLVED' if config['provider']=='THREADS_BROWSER' else 'RESOLVED');nodes=[root];mapped={}
@@ -121,6 +159,7 @@ def crawl(database,config,queries,window,run_id,scope='POSTS_AND_REPLIES',*,prog
                                 with raw.transaction():raw.db.execute('INSERT OR REPLACE INTO threads_inventory VALUES (?,?)',(root.node_id,utcnow()))
                             finally:raw.close()
                             counts['conversations_fetched']+=1
+                            fetched_nodes.add(root.node_id)
                             if detail.get('error_code'):outcome['gaps'].append(detail['error_code'])
                         except AdapterError as error:
                             outcome['gaps'].append(error.code)

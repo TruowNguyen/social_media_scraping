@@ -8,6 +8,7 @@ import uuid
 import os
 import tempfile
 import random
+import socket
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit, parse_qs
@@ -233,6 +234,8 @@ class SearchService:
         self.schedule_path = Path(database).with_name("dashboard-schedule.json")
         self.schedule_lock = threading.RLock()
         self.scheduler_stop = threading.Event()
+        self.runtime_recovery = None
+        self.runtime_lock = threading.Lock()
         from engine.threads_service import ThreadsService
         self.threads = ThreadsService(self.conversation_db,config_dir,enable_scheduler)
         self.schedule = dict(schema_version="dashboard-schedule-v2", pipeline="RAW_V2_THREADS",
@@ -451,6 +454,32 @@ class SearchService:
         self.threads.close()
         self.scheduler_stop.set()
 
+    def recovery_tick(self):
+        if not self.runtime_lock.acquire(blocking=False):
+            return {'status':'BUSY'}
+        try:
+            if self.runtime_recovery is None:
+                from engine.runtime_recovery import RuntimeRecovery
+                from src.config.env import env_int
+                self.runtime_recovery=RuntimeRecovery(self,env_int('RUNTIME_CATCHUP_DAYS',7))
+            return self.runtime_recovery.tick()
+        finally:
+            self.runtime_lock.release()
+
+    def runtime_status(self):
+        from src.acquisition.models import utcnow
+        raw=sqlite3.connect(self.conversation_db,timeout=1)
+        try:
+            exists=raw.execute("SELECT 1 FROM sqlite_master WHERE name='dashboard_worker_heartbeats'").fetchone()
+            workers=[json.loads(r[0]) for r in raw.execute('SELECT payload FROM dashboard_worker_heartbeats')] if exists else []
+        finally:raw.close()
+        now=datetime.now(timezone.utc)
+        active=[w for w in workers if w.get('status')=='RUNNING' and (now-parse_utc(w['updated_at'])).total_seconds()<45]
+        return {'schema_version':'local-runtime-v1','root':str(PROJECT_ROOT),'database':str(self.conversation_db),
+                'as_of':utcnow(),'classifier_active':bool(active),'facebook_running':self.running,
+                'threads_running':bool(self.threads.cancels),
+                'catchup':self.runtime_recovery.status() if self.runtime_recovery else {'status':'SUPERVISOR_NOT_CONNECTED'}}
+
     def start(self, payload, mode="SEARCH", window_override=None, resume_report=None):
         if mode not in {"SEARCH", "CRAWL"}:
             raise ValueError("Chế độ thu thập không hợp lệ.")
@@ -497,18 +526,27 @@ class SearchService:
                 del self.jobs[next(iter(self.jobs))]
 
         def work():
+            from engine.dashboard_conversations import warnings as crawl_warnings
             store = None
+            update = {}
+            run = None
+            def progress(report):
+                with self.lock:
+                    job.update(crawl_run_id=report['crawl_run_id'],progress=dict(report.get('progress',{})),
+                        updated_at=report.get('updated_at'),current_phase=report.get('current_phase'),
+                        current_source=report.get('current_source'),
+                        current_source_name=registry.sources.get(report.get('current_source'),{}).get('name'),
+                        warnings=crawl_warnings(report))
             try:
                 if mode == 'CRAWL':
                     from engine.dashboard_conversations import crawl, results
                     crawl_options={'schedule_context':payload['_schedule_context']} if '_schedule_context' in payload else {}
-                    run = crawl(registry, self.conversation_db, source_ids, window, resume_report['crawl_run_id'] if resume_report else 'dashboard_' + identifier,**crawl_options)
-                    rows = results(self.conversation_db, window, registry.sources, projects, payload.get('project_id'), source_ids)
+                    run = crawl(registry, self.conversation_db, source_ids, window, resume_report['crawl_run_id'] if resume_report else 'dashboard_' + identifier,progress_callback=progress,**crawl_options)
+                    rows = results(self.conversation_db, window, registry.sources, projects, payload.get('project_id'), source_ids,report=run)
                     update = dict(status=run['status'], crawl_run_id=run['crawl_run_id'], rows=rows,
                         pipeline='RAW_V2_THREADS', coverage_limited=True, dropped=0,
                         pending_verification=run['unresolved_time'],
-                        warnings=list(dict.fromkeys(j.get('error_code') or j.get('inventory',{}).get('error_code')
-                            for j in run['jobs'] if j.get('error_code') or j.get('inventory',{}).get('error_code'))),
+                        warnings=crawl_warnings(run),
                         source_outcomes=run['jobs'])
                     return
                 store = AcquisitionStore(self.database)
@@ -524,7 +562,8 @@ class SearchService:
                 if update["pending_verification"] and update["status"] == "SUCCESS":
                     update["status"] = "PARTIAL"
             except Exception:
-                update = dict(status="FAILED", warnings=["SEARCH_FAILED"], rows=[])
+                # Saved raw and previously published progress survive a worker/read failure.
+                update = dict(status="FAILED", warnings=list(dict.fromkeys(job.get('warnings',[])+["CRAWL_FAILED" if mode=='CRAWL' else "SEARCH_FAILED"])))
             finally:
                 if store:
                     store.close()
@@ -558,7 +597,7 @@ def make_handler(database, config_dir, service=None, conversation_db=None):
 
         def do_POST(self):
             path = urlsplit(self.path).path
-            if path not in {"/api/search", "/api/crawl", "/api/schedule", "/api/library/review", "/api/classifications/run", "/api/reviews", "/api/classifications/retry",'/api/acquisition/runs','/api/acquisition/cancel','/api/acquisition/queries','/api/acquisition/schedule'}:
+            if path not in {"/api/search", "/api/crawl", "/api/schedule", "/api/library/review", "/api/classifications/run", "/api/reviews", "/api/classifications/retry",'/api/acquisition/runs','/api/acquisition/cancel','/api/acquisition/queries','/api/acquisition/schedule','/api/runtime/catchup'}:
                 self.send_error(404)
                 return
             expected = {f"http://127.0.0.1:{self.server.server_port}", f"http://localhost:{self.server.server_port}"}
@@ -587,6 +626,8 @@ def make_handler(database, config_dir, service=None, conversation_db=None):
                     self.json_response(workspace.save_reviews(payload))
                 elif path == '/api/classifications/retry':
                     self.json_response(workspace.retry(payload))
+                elif path == '/api/runtime/catchup':
+                    self.json_response(service.recovery_tick())
                 elif path == "/api/classifications/run":
                     self.json_response(classifier.start(),202)
                 elif path == "/api/library/review":
@@ -660,11 +701,16 @@ def make_handler(database, config_dir, service=None, conversation_db=None):
                         self.json_response(run)
                 except ThreadsError as exc:self.json_response({'error':str(exc),'code':exc.code,**exc.details},exc.status)
                 return
-            if path in {'/api/views','/api/catalog','/api/health','/api/views/export.xlsx','/api/classifications/preview'} or path.startswith(('/api/records/','/api/threads/')):
+            if path == '/api/runtime/status':
+                try:self.json_response(service.runtime_status())
+                except Exception:self.json_response({'code':'RUNTIME_BUSY','error':'Trạng thái vận hành đang bận; thử lại sau.'},503)
+                return
+            if path in {'/api/views','/api/views/version','/api/catalog','/api/health','/api/views/export.xlsx','/api/classifications/preview'} or path.startswith(('/api/records/','/api/threads/')):
                 try:
                     if path=='/api/views':self.json_response(workspace.view(params))
+                    elif path=='/api/views/version':self.json_response(workspace.data_version())
                     elif path=='/api/catalog':self.json_response(workspace.catalog())
-                    elif path=='/api/health':self.json_response(workspace.health())
+                    elif path=='/api/health':self.json_response(workspace.health(lightweight=True) if params.get('lightweight')=='1' else workspace.health())
                     elif path=='/api/classifications/preview':self.json_response(workspace.preview())
                     elif path=='/api/views/export.xlsx':
                         self.respond(workspace.export(params.get('view_id','')),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',filename='social-listening-report.xlsx')
@@ -799,6 +845,15 @@ def make_handler(database, config_dir, service=None, conversation_db=None):
     return Handler
 
 
+class DashboardHTTPServer(ThreadingHTTPServer):
+    allow_reuse_address=False
+
+    def server_bind(self):
+        if os.name=='nt':
+            self.socket.setsockopt(socket.SOL_SOCKET,socket.SO_EXCLUSIVEADDRUSE,1)
+        super().server_bind()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Local Google social search and video output")
     parser.add_argument("--port", type=int, default=8765)
@@ -807,14 +862,19 @@ def main():
     from engine.classification_worker import DEFAULT_DB
     parser.add_argument('--conversation-db',type=Path,default=None,help='Optional override; defaults to the same --db')
     args = parser.parse_args()
-    server = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(args.db, args.config_dir,conversation_db=args.conversation_db))
-    print(f"Dashboard: http://127.0.0.1:{args.port}", flush=True)
+    # Claim the port before constructing services or starting any scheduler.
+    try:server = DashboardHTTPServer(("127.0.0.1", args.port), BaseHTTPRequestHandler)
+    except OSError as error:
+        parser.error(f"Không mở được cổng {args.port}. Nếu dashboard đang chạy, mở http://127.0.0.1:{args.port} thay vì chạy thêm một tiến trình. ({error.errno})")
     try:
+        server.RequestHandlerClass=make_handler(args.db,args.config_dir,conversation_db=args.conversation_db)
+        print(f"Dashboard: http://127.0.0.1:{args.port}", flush=True)
         server.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
-        server.RequestHandlerClass.acquisition_service.close()
+        service=getattr(server.RequestHandlerClass,'acquisition_service',None)
+        if service:service.close()
         server.server_close()
 
 
